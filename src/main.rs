@@ -1,30 +1,47 @@
+mod keyboard;
+mod state;
 mod ui;
 
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratatui::{
-    Frame, Terminal,
-    backend::CrosstermBackend,
-    layout::{Constraint, Layout, Rect},
-    style::{Color, Style, Stylize},
-    text::{Line, Span, ToSpan},
-    widgets::Paragraph,
-};
-use std::{
-    io::{self},
-    rc::Rc,
-};
+use ratatui::{Terminal, backend::CrosstermBackend};
+use std::io::{self};
 
-use ui::components::badge::badge;
+use crate::state::{AppState, FocusedPanel};
 
-#[derive(Clone, Debug, Default, Copy, PartialEq, Eq)]
-enum InputMode {
-    #[default]
-    Normal,
-    Editing,
+pub struct Application {
+    state: AppState,
+    exit_request: bool,
+}
+
+impl Application {
+    fn new() -> Self {
+        Self {
+            state: AppState {
+                focused_panel: FocusedPanel::Method,
+            },
+            exit_request: false,
+        }
+    }
+
+    fn run<T: ratatui::backend::Backend>(&mut self, terminal: &mut Terminal<T>) -> io::Result<()> {
+        loop {
+            terminal.draw(|frame| self.render(frame))?;
+
+            if event::poll(std::time::Duration::from_millis(100))? {
+                if let Event::Key(key) = event::read()? {
+                    self.handle_input(key.code);
+                }
+            }
+
+            if self.exit_request {
+                return Ok(());
+            }
+        }
+    }
 }
 
 fn main() -> io::Result<()> {
@@ -36,7 +53,7 @@ fn main() -> io::Result<()> {
     let mut terminal = Terminal::new(backend)?;
 
     // Run app
-    let res = run(&mut terminal);
+    let res = Application::new().run(&mut terminal);
 
     // Restore terminal
     disable_raw_mode()?;
@@ -48,41 +65,4 @@ fn main() -> io::Result<()> {
     }
 
     Ok(())
-}
-
-fn layout(frame: &mut Frame) -> Rc<[Rect]> {
-    let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(frame.area());
-    layout
-}
-
-fn run<T: ratatui::backend::Backend>(terminal: &mut Terminal<T>) -> io::Result<()> {
-    loop {
-        terminal.draw(|frame| {
-            let layout = layout(frame);
-
-            let title_spans = [
-                "curl".to_span(),
-                Span::styled("++", Style::default().fg(Color::Rgb(212, 175, 55)).bold()),
-            ];
-            let paragraph = Paragraph::new(Line::from_iter(title_spans));
-
-            let mut help_spans = badge("q", None, (75, 75, 75));
-            help_spans.push("quit ".to_span());
-            help_spans.append(&mut badge("󰌑", None, (75, 75, 75)));
-            help_spans.push("edit".to_span());
-
-            let help = Paragraph::new(Line::from_iter(help_spans));
-
-            frame.render_widget(paragraph, layout[0]);
-            frame.render_widget(help, layout[1]);
-        })?;
-
-        if event::poll(std::time::Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                if key.code == KeyCode::Char('q') {
-                    return Ok(());
-                }
-            }
-        }
-    }
 }
