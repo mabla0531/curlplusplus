@@ -13,8 +13,8 @@ use std::io::{self};
 use crate::state::{AppState, FocusedPanel};
 
 pub struct Application {
-    state: AppState,
-    exit_request: bool,
+    pub state: AppState,
+    pub exit_request: bool,
 }
 
 impl Application {
@@ -33,7 +33,7 @@ impl Application {
 
             if event::poll(std::time::Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {
-                    self.handle_input(key.code);
+                    self.handle_input(key);
                 }
             }
 

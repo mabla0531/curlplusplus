@@ -3,13 +3,13 @@ mod palette;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Rect},
+    layout::{Constraint, Layout, Margin, Offset, Rect},
     style::{Style, Stylize},
     text::{Line, Span, ToSpan},
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
 
-use crate::{Application, ui::components::badge::badge};
+use crate::{Application, state::FocusedPanel, ui::components::badge::badge};
 
 struct LayoutSet {
     pub app_name: Rect,
@@ -50,6 +50,8 @@ impl Application {
     pub fn render(&self, frame: &mut Frame) {
         let layout = layout(frame);
 
+        frame.render_widget(Block::new().bg(palette::CRUST), frame.area());
+
         self.render_title(frame, layout.app_name);
         self.render_method(frame, layout.method_selector);
         self.render_url_input(frame, layout.url_input);
@@ -59,19 +61,34 @@ impl Application {
     }
 
     pub fn render_help_bar(&self, frame: &mut Frame, area: Rect) {
-        let mut help_spans = badge("q", None, palette::SURFACE0);
-        help_spans.push("quit ".to_span());
-        help_spans.append(&mut badge("󰌑", None, palette::SURFACE0));
-        help_spans.push("edit ".to_span());
-        help_spans.append(&mut badge("ctrl", None, palette::SURFACE0));
-        help_spans.push("+".to_span());
-        help_spans.append(&mut badge("󰌑", None, palette::SURFACE0));
-        help_spans.push("send".to_span());
+        let help_spans = [
+            badge("󰌒", None, palette::SURFACE0),
+            vec!["/".to_span()],
+            badge("󰘶", None, palette::SURFACE0),
+            badge("󰌒", None, palette::SURFACE0),
+            vec!["switch pane  ".to_span()],
+            badge("", None, palette::SURFACE0),
+            badge("", None, palette::SURFACE0),
+            badge("", None, palette::SURFACE0),
+            badge("", None, palette::SURFACE0),
+            vec!["interact  ".to_span()],
+            badge("󰌑", None, palette::SURFACE0),
+            vec!["edit  ".to_span()],
+            badge("󱊷", None, palette::SURFACE0),
+            vec!["exit edit  ".to_span()],
+            badge("ctrl", None, palette::SURFACE0),
+            badge("󰌑", None, palette::SURFACE0),
+            vec!["send  ".to_span()],
+            badge("q", None, palette::SURFACE0),
+            vec!["quit".to_span()],
+        ]
+        .concat();
 
         let help = Paragraph::new(Line::from_iter(help_spans));
 
         frame.render_widget(help, area);
     }
+
     pub fn render_title(&self, frame: &mut Frame, area: Rect) {
         let title_spans = [
             "curl".to_span(),
@@ -84,6 +101,10 @@ impl Application {
     }
 
     pub fn render_method(&self, frame: &mut Frame, area: Rect) {
+        let border_style = (self.state.focused_panel == FocusedPanel::Method)
+            .then_some(Style::new().fg(palette::SKY))
+            .unwrap_or_default();
+
         let method = Paragraph::new(Line::from_iter(badge(
             "  GET  ",
             Some(palette::CRUST),
@@ -92,12 +113,17 @@ impl Application {
         .block(
             Block::new()
                 .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(border_style),
         );
         frame.render_widget(method, area);
     }
 
     pub fn render_url_input(&self, frame: &mut Frame, area: Rect) {
+        let border_style = (self.state.focused_panel == FocusedPanel::Url)
+            .then_some(Style::new().fg(palette::SKY))
+            .unwrap_or_default();
+
         let url = Paragraph::new(Line::from_iter([Span::styled(
             "",
             Style::default().bg(palette::CRUST),
@@ -105,42 +131,73 @@ impl Application {
         .block(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(border_style),
         );
 
         frame.render_widget(url, area);
     }
 
     pub fn render_request_pane(&self, frame: &mut Frame, area: Rect) {
+        let sub_area = Layout::vertical([Constraint::Length(2), Constraint::Fill(1)])
+            .split(area.inner(Margin::new(1, 1)));
+
+        let (tabs_area, content_area) = (sub_area[0], sub_area[1]);
+
+        let border_style = (self.state.focused_panel == FocusedPanel::Request)
+            .then_some(Style::new().fg(palette::SKY))
+            .unwrap_or_default();
+
         let tabs = [
-            badge("Headers", None, palette::SURFACE0),
-            badge("Body", None, palette::SURFACE1),
-            badge("Settings", None, palette::SURFACE0),
+            badge("Headers", Some(palette::SUBTEXT0), palette::SURFACE0),
+            badge("Body", Some(palette::SAPPHIRE), palette::SURFACE2),
+            badge("Settings", Some(palette::SUBTEXT0), palette::SURFACE0),
         ]
-        .into_iter()
-        .flatten();
-        let tabs_paragraph = Paragraph::new(Line::from_iter(tabs)).block(
+        .concat();
+
+        let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
+
+        let request_data = Paragraph::new("goober").bg(palette::BASE);
+
+        frame.render_widget(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(border_style),
+            area,
         );
-
-        frame.render_widget(tabs_paragraph, area);
+        frame.render_widget(tabs_paragraph, tabs_area);
+        frame.render_widget(request_data, content_area);
     }
 
     pub fn render_response_pane(&self, frame: &mut Frame, area: Rect) {
+        let sub_area = Layout::vertical([Constraint::Length(2), Constraint::Fill(1)])
+            .split(area.inner(Margin::new(1, 1)));
+
+        let (tabs_area, content_area) = (sub_area[0], sub_area[1]);
+
+        let border_style = (self.state.focused_panel == FocusedPanel::Response)
+            .then_some(Style::new().fg(palette::SKY))
+            .unwrap_or_default();
+
         let tabs = [
-            badge("Data", None, palette::SURFACE1),
-            badge("Body", None, palette::SURFACE0),
+            badge("Data", Some(palette::SUBTEXT0), palette::SURFACE0),
+            badge("Body", Some(palette::SAPPHIRE), palette::SURFACE2),
         ]
-        .into_iter()
-        .flatten();
-        let tabs_paragraph = Paragraph::new(Line::from_iter(tabs)).block(
+        .concat();
+
+        let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
+
+        let request_data = Paragraph::new("goober").bg(palette::BASE);
+
+        frame.render_widget(
             Block::new()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded),
+                .border_type(BorderType::Rounded)
+                .border_style(border_style),
+            area,
         );
-
-        frame.render_widget(tabs_paragraph, area);
+        frame.render_widget(tabs_paragraph, tabs_area);
+        frame.render_widget(request_data, content_area);
     }
 }
