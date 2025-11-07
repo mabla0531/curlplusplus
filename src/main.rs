@@ -10,7 +10,7 @@ use crossterm::{
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self};
 
-use crate::state::{AppState, FocusedPanel};
+use crate::state::{AppState, FocusedPanel, Method};
 
 pub struct Application {
     pub state: AppState,
@@ -21,7 +21,9 @@ impl Application {
     fn new() -> Self {
         Self {
             state: AppState {
+                current_method: Method::Get,
                 focused_panel: FocusedPanel::Method,
+                show_method_dropdown: false,
             },
             exit_request: false,
         }
