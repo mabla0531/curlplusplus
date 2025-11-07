@@ -26,3 +26,13 @@ pub const SURFACE0: Color = Color::Rgb(54, 58, 79);
 pub const BASE: Color = Color::Rgb(36, 39, 58);
 pub const MANTLE: Color = Color::Rgb(30, 32, 48);
 pub const CRUST: Color = Color::Rgb(24, 25, 38);
+
+pub const GET_COLOR: Color = SKY;
+pub const POST_COLOR: Color = ROSEWATER;
+pub const PUT_COLOR: Color = TEAL;
+pub const PATCH_COLOR: Color = MAUVE;
+pub const OPTIONS_COLOR: Color = PEACH;
+pub const CONNECT_COLOR: Color = YELLOW;
+pub const TRACE_COLOR: Color = MAROON;
+pub const DELETE_COLOR: Color = RED;
+pub const HEAD_COLOR: Color = GREEN;
