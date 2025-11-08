@@ -1,13 +1,32 @@
 use std::fmt::Display;
 
 pub struct AppState {
-    pub focused_panel: FocusedPanel,
+    pub focused_panel: Panel,
+
     pub current_method: Method,
     pub show_method_dropdown: bool,
+
+    pub url_input: String,
+
+    pub current_request_tab: RequestTab,
+    pub current_response_tab: ResponseTab,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum FocusedPanel {
+pub enum RequestTab {
+    Headers,
+    Body,
+    Settings,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ResponseTab {
+    Data,
+    Body,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Panel {
     Method,
     Url,
     Request,
