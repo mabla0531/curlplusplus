@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Margin, Rect},
-    style::{Style, Stylize},
+    style::Style,
     text::Line,
     widgets::{Block, BorderType, Borders, Paragraph},
 };
@@ -52,7 +52,14 @@ impl Application {
 
         let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
 
-        let request_data = Paragraph::new("goober").bg(palette::BASE);
+        let test_header_1 = Paragraph::new("my_header_1").block(Block::new());
+        let test_header_2 = Paragraph::new("my_header_2").block(Block::new());
+        let test_header_3 = Paragraph::new("my_header_3").block(Block::new());
+        let add_header_button = Paragraph::new(Line::from_iter(badge(
+            "Add Header",
+            Some(palette::SUBTEXT0),
+            palette::SURFACE0,
+        )));
 
         frame.render_widget(
             Block::new()
@@ -62,6 +69,6 @@ impl Application {
             area,
         );
         frame.render_widget(tabs_paragraph, tabs_area);
-        frame.render_widget(request_data, content_area);
+        frame.render_widget(add_header_button, content_area);
     }
 }
