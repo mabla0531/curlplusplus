@@ -1,3 +1,7 @@
+// TODO Unfuckify this state struct, put it in the base app and
+// partition each panel's substate out cause this is gonna get
+// real VB.NETitive real quick
+
 use std::fmt::Display;
 
 pub struct AppState {
@@ -9,6 +13,11 @@ pub struct AppState {
     pub url_input: String,
 
     pub current_request_tab: RequestTab,
+    pub request_headers: Vec<(String, String)>,
+    pub request_body: String,
+    pub request_settings: (), // TODO "fill in the type" i CANT i EATED it all
+    pub focused_element: FocusedRequestHeadersElement,
+
     pub current_response_tab: ResponseTab,
 }
 
@@ -44,6 +53,13 @@ pub enum Method {
     Trace,
     Delete,
     Head,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum FocusedRequestHeadersElement {
+    Tabs,
+    Header(Option<u8>),
+    AddButton,
 }
 
 impl Display for Method {
