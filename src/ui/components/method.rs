@@ -31,7 +31,7 @@ impl Application {
         );
 
         let method = Paragraph::new(Line::from_iter(badge(
-            method_dropdown_str.as_str(),
+            method_dropdown_str,
             Some(palette::CRUST),
             match self.state.current_method {
                 Method::Get => palette::GET_COLOR,
