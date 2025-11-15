@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     Application,
-    state::{Panel, RequestTab, ResponseTab},
+    state::{Panel, RequestHeaderFocus, RequestTab, ResponseTab},
 };
 
 use crate::state::Method;
@@ -10,9 +10,9 @@ use crate::state::Method;
 impl Application {
     pub fn handle_input(&mut self, event: KeyEvent) {
         match event.code {
-            KeyCode::Char(character) => match self.state.focused_panel {
+            KeyCode::Char(character) => match self.focused_panel {
                 Panel::Method => {
-                    self.state.current_method = match character {
+                    self.method_state.current_method = match character {
                         'g' | 'G' => Method::Get,
                         'p' | 'P' => Method::Post,
                         'o' | 'O' => Method::Options,
@@ -22,114 +22,116 @@ impl Application {
                         'h' | 'H' => Method::Head,
                         'u' | 'U' => Method::Put,
                         'a' | 'A' => Method::Patch,
-                        _ => self.state.current_method.clone(),
+                        _ => self.method_state.current_method.clone(),
                     }
                 }
-                Panel::Url => self.state.url_input.push(character),
+                Panel::Url => self.url_state.url_input.push(character),
                 _ => {}
             },
             KeyCode::BackTab => {
-                self.state.focused_panel = match self.state.focused_panel {
-                    Panel::Method => Panel::Response,
-                    Panel::Url => Panel::Method,
-                    Panel::Request => Panel::Url,
-                    Panel::Response => Panel::Request,
-                }
-            }
-            KeyCode::Backspace if self.state.focused_panel == Panel::Url => {
-                self.state.url_input.pop();
+                self.method_state.show_dropdown = false;
+                self.focused_panel.decrement();
             }
             KeyCode::Tab => {
-                self.state.show_method_dropdown = false;
-                self.state.focused_panel = match self.state.focused_panel {
-                    Panel::Method => Panel::Url,
-                    Panel::Url => Panel::Request,
-                    Panel::Request => Panel::Response,
-                    Panel::Response => Panel::Method,
-                }
+                self.method_state.show_dropdown = false;
+                self.focused_panel.increment();
             }
-            KeyCode::Enter => match self.state.focused_panel {
-                Panel::Method => self.state.show_method_dropdown = !self.state.show_method_dropdown,
+            KeyCode::Backspace if self.focused_panel == Panel::Url => {
+                self.url_state.url_input.pop();
+            }
+            KeyCode::Enter => match &self.focused_panel {
+                Panel::Method => self.method_state.show_dropdown = !self.method_state.show_dropdown,
                 Panel::Url => {}
-                Panel::Request => {}
-                Panel::Response => {}
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => match self.request_state.current_header {
+                        RequestHeaderFocus::Header(num) => {} // set editing flag
+                        RequestHeaderFocus::Add => self
+                            .request_state
+                            .headers
+                            .push((String::new(), String::new())),
+                    },
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
+                Panel::Response(response_tab) => {}
             },
-            KeyCode::Up => match self.state.focused_panel {
-                Panel::Method => {
-                    self.state.current_method = match self.state.current_method {
-                        Method::Get => Method::Head,
-                        Method::Post => Method::Get,
-                        Method::Put => Method::Post,
-                        Method::Patch => Method::Put,
-                        Method::Options => Method::Patch,
-                        Method::Connect => Method::Options,
-                        Method::Trace => Method::Connect,
-                        Method::Delete => Method::Trace,
-                        Method::Head => Method::Delete,
+            KeyCode::Up => match &self.focused_panel {
+                Panel::Method => self.method_state.current_method.decrement(),
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        self.request_state.current_header = match self.request_state.current_header
+                        {
+                            RequestHeaderFocus::Header(header_num) => {
+                                RequestHeaderFocus::Header(header_num.saturating_sub(1))
+                            }
+                            RequestHeaderFocus::Add => {
+                                if !self.request_state.headers.is_empty() {
+                                    RequestHeaderFocus::Header(
+                                        self.request_state.headers.len().saturating_sub(1),
+                                    )
+                                } else {
+                                    RequestHeaderFocus::Add
+                                }
+                            }
+                        }
                     }
-                }
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
 
                 _ => {}
             },
-            KeyCode::Down => match self.state.focused_panel {
-                Panel::Method => {
-                    self.state.current_method = match self.state.current_method {
-                        Method::Get => Method::Post,
-                        Method::Post => Method::Put,
-                        Method::Put => Method::Patch,
-                        Method::Patch => Method::Options,
-                        Method::Options => Method::Connect,
-                        Method::Connect => Method::Trace,
-                        Method::Trace => Method::Delete,
-                        Method::Delete => Method::Head,
-                        Method::Head => Method::Get,
+            KeyCode::Down => match &self.focused_panel {
+                Panel::Method => self.method_state.current_method.increment(),
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        if let RequestHeaderFocus::Header(header_num) =
+                            self.request_state.current_header
+                        {
+                            self.request_state.current_header =
+                                if header_num >= self.request_state.headers.len() - 1 {
+                                    RequestHeaderFocus::Add
+                                } else {
+                                    RequestHeaderFocus::Header(
+                                        header_num
+                                            .saturating_add(1)
+                                            .min(self.request_state.headers.len()),
+                                    )
+                                }
+                        }
                     }
-                }
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
                 _ => {}
             },
-            KeyCode::Left => match self.state.focused_panel {
-                Panel::Request => {
-                    self.state.current_request_tab = match self.state.current_request_tab {
-                        RequestTab::Headers => RequestTab::Settings,
-                        RequestTab::Body => RequestTab::Headers,
-                        RequestTab::Settings => RequestTab::Body,
-                    }
-                }
-                Panel::Response => {
-                    self.state.current_response_tab = match self.state.current_response_tab {
-                        ResponseTab::Data => ResponseTab::Body,
-                        ResponseTab::Body => ResponseTab::Data,
-                    }
-                }
+            KeyCode::Left => match &self.focused_panel {
+                Panel::Request(request_tab) => {}
+                Panel::Response(response_tab) => {}
                 _ => {}
             },
-            KeyCode::Right => match self.state.focused_panel {
+            KeyCode::Right => match &self.focused_panel {
                 Panel::Url => {
-                    if self.state.url_input == "https" || self.state.url_input == "http" {
-                        self.state.url_input.push_str("://");
+                    if self.url_state.url_input == "https" || self.url_state.url_input == "http" {
+                        self.url_state.url_input.push_str("://");
                     }
-                    if "htt".starts_with(self.state.url_input.as_str())
-                        || self.state.url_input.is_empty()
+                    if "htt".starts_with(self.url_state.url_input.as_str())
+                        || self.url_state.url_input.is_empty()
                     {
-                        self.state.url_input = "http".to_string();
+                        self.url_state.url_input = "http".to_string();
                     }
-                    if self.state.url_input.ends_with(".") {
-                        self.state.url_input.push_str("com");
-                    }
-                }
-                Panel::Request => {
-                    self.state.current_request_tab = match self.state.current_request_tab {
-                        RequestTab::Headers => RequestTab::Body,
-                        RequestTab::Body => RequestTab::Settings,
-                        RequestTab::Settings => RequestTab::Headers,
+                    if self.url_state.url_input.ends_with(".") {
+                        self.url_state.url_input.push_str("com");
                     }
                 }
-                Panel::Response => {
-                    self.state.current_response_tab = match self.state.current_response_tab {
-                        ResponseTab::Data => ResponseTab::Body,
-                        ResponseTab::Body => ResponseTab::Data,
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        self.request_state.current_header_section.increment();
                     }
-                }
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
+                Panel::Response(request_tab) => {}
                 _ => {}
             },
             KeyCode::Esc => self.exit_request = true,

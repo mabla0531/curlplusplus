@@ -10,37 +10,37 @@ use crossterm::{
 use ratatui::{Terminal, backend::CrosstermBackend};
 use std::io::{self};
 
-use crate::state::{
-    AppState, FocusedRequestHeadersElement, Method, Panel, RequestTab, ResponseTab,
-};
+use crate::state::*;
 
 pub struct Application {
-    pub state: AppState,
+    pub focused_panel: Panel,
+    pub method_state: MethodState,
+    pub url_state: UrlState,
+    pub request_state: RequestState,
+    pub response_state: ResponseState,
     pub exit_request: bool,
 }
 
 impl Application {
     fn new() -> Self {
         Self {
-            state: AppState {
-                focused_panel: Panel::Method,
-
+            focused_panel: Panel::Method,
+            method_state: MethodState {
                 current_method: Method::Get,
-                show_method_dropdown: false,
-
-                url_input: String::new(),
-
-                current_request_tab: RequestTab::Headers,
-                request_headers: vec![
-                    ("hi".to_string(), "goobr".to_string()),
-                    ("header2".to_string(), "bonk".to_string()),
-                ],
-                request_body: String::new(),
-                request_settings: (),
-                focused_element: FocusedRequestHeadersElement::Tabs,
-
-                current_response_tab: ResponseTab::Data,
+                show_dropdown: false,
             },
+            url_state: UrlState {
+                url_input: String::new(),
+            },
+            request_state: RequestState {
+                body: String::new(),
+                current_header: RequestHeaderFocus::Add,
+                current_header_section: HeaderSection::Name,
+                headers: Vec::new(),
+                settings: (),
+            },
+            response_state: ResponseState {},
+
             exit_request: false,
         }
     }
