@@ -17,13 +17,13 @@ use crate::{
 
 impl Application {
     pub fn render_method(&self, frame: &mut Frame, area: Rect) {
-        let border_style = if let Panel::Method = self.state.focused_panel {
+        let border_style = if let Panel::Method = self.focused_panel {
             Style::new().fg(palette::SKY)
         } else {
             Default::default()
         };
 
-        let method_str = self.state.current_method.to_string();
+        let method_str = self.method_state.current_method.to_string();
         let method_dropdown_str = format!(
             " {}{} ",
             method_str,
@@ -33,7 +33,7 @@ impl Application {
         let method = Paragraph::new(Line::from_iter(badge(
             method_dropdown_str,
             Some(palette::CRUST),
-            match self.state.current_method {
+            match self.method_state.current_method {
                 Method::Get => palette::GET_COLOR,
                 Method::Post => palette::POST_COLOR,
                 Method::Put => palette::PUT_COLOR,

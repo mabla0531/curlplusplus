@@ -67,7 +67,7 @@ impl Application {
         self.render_response_pane(frame, layout.response_pane);
         self.render_help_bar(frame, layout.help_bar);
 
-        if self.state.show_method_dropdown {
+        if self.method_state.show_dropdown {
             self.render_method_dropdown(frame, layout.method_dropdown);
         }
     }

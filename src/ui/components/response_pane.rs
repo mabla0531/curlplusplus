@@ -1,7 +1,7 @@
 use ratatui::{
     Frame,
     layout::{Constraint, Layout, Margin, Rect},
-    style::{Style, Stylize},
+    style::Style,
     text::Line,
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
@@ -19,22 +19,19 @@ impl Application {
 
         let (tabs_area, content_area) = (sub_area[0], sub_area[1]);
 
-        let border_style = if self.state.focused_panel == Panel::Response {
-            Style::new().fg(palette::SKY)
-        } else {
-            Default::default()
+        let border_style = match self.focused_panel {
+            Panel::Response(_) => Style::new().fg(palette::SKY),
+            _ => Default::default(),
         };
 
-        let (data_fg, data_bg) = if self.state.current_response_tab == ResponseTab::Data {
-            (palette::SAPPHIRE, palette::SURFACE2)
-        } else {
-            (palette::SUBTEXT0, palette::SURFACE0)
+        let (data_fg, data_bg) = match self.focused_panel {
+            Panel::Response(ResponseTab::Data) => (palette::SAPPHIRE, palette::SURFACE2),
+            _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
-        let (body_fg, body_bg) = if self.state.current_response_tab == ResponseTab::Body {
-            (palette::SAPPHIRE, palette::SURFACE2)
-        } else {
-            (palette::SUBTEXT0, palette::SURFACE0)
+        let (body_fg, body_bg) = match self.focused_panel {
+            Panel::Response(ResponseTab::Body) => (palette::SAPPHIRE, palette::SURFACE2),
+            _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
         let tabs = [
