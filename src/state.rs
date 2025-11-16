@@ -27,7 +27,7 @@ pub struct RequestState {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ResponseState {}
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RequestTab {
     Headers,
     Body,

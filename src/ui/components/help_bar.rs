@@ -3,7 +3,8 @@ use crate::{Application, ui::components::badge::badge, ui::palette};
 use ratatui::{
     Frame,
     layout::{Alignment, Rect},
-    text::{Line, ToSpan},
+    style::Style,
+    text::{Line, Span},
     widgets::Paragraph,
 };
 
@@ -11,17 +12,23 @@ impl Application {
     pub fn render_help_bar(&self, frame: &mut Frame, area: Rect) {
         let help_spans = [
             badge("󰌒", None, palette::SURFACE0),
-            vec!["/".to_span()],
+            vec![Span::styled("/", Style::new().fg(palette::TEXT))],
             badge("󰘶", None, palette::SURFACE0),
             badge("󰌒", None, palette::SURFACE0),
-            vec!["switch pane  ".to_span()],
+            vec![Span::styled(
+                "switch pane  ",
+                Style::new().fg(palette::TEXT),
+            )],
             badge("󰌑", None, palette::SURFACE0),
-            vec!["edit/confirm  ".to_span()],
+            vec![Span::styled(
+                "edit/confirm  ",
+                Style::new().fg(palette::TEXT),
+            )],
             badge("󱊷", None, palette::SURFACE0),
-            vec!["exit  ".to_span()],
+            vec![Span::styled("exit  ", Style::new().fg(palette::TEXT))],
             badge("ctrl", None, palette::SURFACE0),
             badge("󰌑", None, palette::SURFACE0),
-            vec!["send  ".to_span()],
+            vec![Span::styled("send  ", Style::new().fg(palette::TEXT))],
         ]
         .concat();
 

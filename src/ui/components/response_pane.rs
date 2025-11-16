@@ -2,7 +2,7 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout, Margin, Rect},
     style::Style,
-    text::Line,
+    text::{Line, Span},
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
 };
 
@@ -21,7 +21,7 @@ impl Application {
 
         let border_style = match self.focused_panel {
             Panel::Response(_) => Style::new().fg(palette::SKY),
-            _ => Default::default(),
+            _ => Style::new().fg(palette::TEXT),
         };
 
         let (data_fg, data_bg) = match self.focused_panel {
@@ -42,8 +42,8 @@ impl Application {
 
         let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
 
-        let request_data =
-            Paragraph::new("goober").block(Block::new().padding(Padding::new(1, 1, 1, 1)));
+        let request_data = Paragraph::new(Span::styled("goober", Style::new().fg(palette::TEXT)))
+            .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
 
         frame.render_widget(
             Block::new()

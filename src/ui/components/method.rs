@@ -17,10 +17,9 @@ use crate::{
 
 impl Application {
     pub fn render_method(&self, frame: &mut Frame, area: Rect) {
-        let border_style = if let Panel::Method = self.focused_panel {
-            Style::new().fg(palette::SKY)
-        } else {
-            Default::default()
+        let border_style = match self.focused_panel {
+            Panel::Method => Style::new().fg(palette::SKY),
+            _ => Style::new().fg(palette::TEXT),
         };
 
         let method_str = self.method_state.current_method.to_string();

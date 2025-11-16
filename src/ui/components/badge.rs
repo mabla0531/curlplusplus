@@ -1,3 +1,5 @@
+use crate::ui::palette;
+
 use ratatui::{
     style::{Color, Style},
     text::Span,
@@ -9,9 +11,10 @@ where
 {
     let mut text_style = Style::default().bg(bg);
 
-    if let Some(fg) = fg {
-        text_style = text_style.fg(fg);
-    }
+    text_style = match fg {
+        Some(fg) => text_style.fg(fg),
+        None => text_style.fg(palette::TEXT),
+    };
 
     let for_sure_string: String = text.into();
 
