@@ -10,7 +10,7 @@ use ratatui::{
 
 use crate::{
     Application,
-    state::{Panel, RequestHeaderFocus, RequestTab},
+    state::{HeaderSection, Panel, RequestHeaderFocus, RequestTab},
     ui::{components::badge::badge, palette},
 };
 
@@ -23,7 +23,7 @@ impl Application {
 
         let border_style = match self.focused_panel {
             Panel::Request(_) => Style::new().fg(palette::SKY),
-            _ => Default::default(),
+            _ => Style::new().fg(palette::TEXT),
         };
 
         let (headers_fg, headers_bg) = match self.focused_panel {
@@ -82,6 +82,7 @@ impl Application {
                     name,
                     value,
                     self.request_state.current_header == index,
+                    self.request_state.current_header_section.clone(),
                     area,
                 )
             })
@@ -114,51 +115,69 @@ impl Application {
     pub fn render_request_settings_pane(&self, frame: &mut Frame, area: Rect) {}
 }
 
-fn header_line<'a>(name: String, value: String, focused: bool, area: Rect) -> [Line<'a>; 2] {
-    let padding = 1;
-    let name_field_width = 16;
+fn header_line<'a>(
+    name: String,
+    value: String,
+    focused: bool,
+    section: HeaderSection,
+    area: Rect,
+) -> [Line<'a>; 2] {
+    let padding = 1_usize;
+    let name_field_width = 16_usize;
 
     // magic number guide: 2 is name field badge side characters, 1 is colon separator
-    let value_field_width = area.width - (padding * 2) - name_field_width - 2 - 1;
+    let value_field_width =
+        (area.width as usize).saturating_sub(padding * 2 + name_field_width + 2 + 1);
 
-    let name_padding_len = name_field_width as usize - name.len();
+    let name_padding_len = name_field_width.saturating_sub(name.len());
     let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
-    let value_padding_len = value_field_width as usize - value.len();
+    let value_padding_len = value_field_width
+        .saturating_sub(value.len() + 5)
+        .min(value_field_width); // 5 == trashcan badge
     let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
+
+    let name_badge = badge(
+        format!("{}{}", name, name_padding),
+        Some(palette::TEXT),
+        if focused && section == HeaderSection::Name {
+            palette::SURFACE1
+        } else {
+            palette::SURFACE0
+        },
+    );
+
+    let separator = vec![Span::styled(":", Style::new().fg(palette::TEXT))];
+
+    let value_badge = badge(
+        format!("{}{}", value, value_padding),
+        Some(palette::TEXT),
+        if focused && section == HeaderSection::Value {
+            palette::SURFACE1
+        } else {
+            palette::SURFACE0
+        },
+    );
+
+    let delete_badge = badge(
+        "",
+        if focused && section == HeaderSection::Delete {
+            Some(palette::RED)
+        } else {
+            Some(palette::MAROON)
+        },
+        if focused && section == HeaderSection::Delete {
+            palette::SURFACE1
+        } else {
+            palette::SURFACE0
+        },
+    );
 
     [
         Line::from_iter(
-            [
-                badge(
-                    format!("{}{}", name, name_padding),
-                    None,
-                    if focused {
-                        palette::SURFACE1
-                    } else {
-                        palette::SURFACE0
-                    },
-                ),
-                vec![Span::styled(
-                    ":",
-                    Style::new().fg(if focused {
-                        palette::TEXT
-                    } else {
-                        palette::SUBTEXT0
-                    }),
-                )],
-                badge(
-                    format!("{}{}", value, value_padding),
-                    None,
-                    if focused {
-                        palette::SURFACE1
-                    } else {
-                        palette::SURFACE0
-                    },
-                ),
-            ]
-            .into_iter()
-            .flatten()
-            .collect::<Vec<_>>(),
+            [name_badge, separator, value_badge, delete_badge]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>(),
         ),
         Line::from(""),
     ]

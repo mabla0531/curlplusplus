@@ -10,10 +10,9 @@ use crate::{Application, state::Panel, ui::palette};
 
 impl Application {
     pub fn render_url_input(&self, frame: &mut Frame, area: Rect) {
-        let border_style = if self.focused_panel == Panel::Url {
-            Style::new().fg(palette::SKY)
-        } else {
-            Default::default()
+        let border_style = match self.focused_panel {
+            Panel::Url => Style::new().fg(palette::SKY),
+            _ => Style::new().fg(palette::TEXT),
         };
 
         let help_string = if self.focused_panel != Panel::Url {

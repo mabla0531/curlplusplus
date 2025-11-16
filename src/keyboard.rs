@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     Application,
-    state::{Panel, RequestHeaderFocus, RequestTab, ResponseTab},
+    state::{HeaderSection, Panel, RequestHeaderFocus, RequestTab},
 };
 
 use crate::state::Method;
@@ -26,6 +26,22 @@ impl Application {
                     }
                 }
                 Panel::Url => self.url_state.url_input.push(character),
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        if let RequestHeaderFocus::Header(header) =
+                            self.request_state.current_header
+                            && let Some(name) = self.request_state.headers.get_mut(header)
+                        {
+                            match self.request_state.current_header_section {
+                                HeaderSection::Name => name.0.push(character),
+                                HeaderSection::Value => name.1.push(character),
+                                HeaderSection::Delete => {}
+                            }
+                        }
+                    }
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
                 _ => {}
             },
             KeyCode::BackTab => {
@@ -106,7 +122,13 @@ impl Application {
                 _ => {}
             },
             KeyCode::Left => match &self.focused_panel {
-                Panel::Request(request_tab) => {}
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        self.request_state.current_header_section.decrement();
+                    }
+                    RequestTab::Body => {}
+                    RequestTab::Settings => {}
+                },
                 Panel::Response(response_tab) => {}
                 _ => {}
             },
