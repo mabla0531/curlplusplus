@@ -52,15 +52,48 @@ impl Application {
                 self.method_state.show_dropdown = false;
                 self.focused_panel.increment();
             }
-            KeyCode::Backspace if self.focused_panel == Panel::Url => {
-                self.url_state.url_input.pop();
-            }
+            KeyCode::Backspace => match self.focused_panel {
+                Panel::Url => {
+                    self.url_state.url_input.pop();
+                }
+                Panel::Request(request_tab) => match request_tab {
+                    RequestTab::Headers => {
+                        if let RequestHeaderFocus::Header(header_index) =
+                            self.request_state.current_header
+                            && let Some((header_name, header_value)) =
+                                self.request_state.headers.get_mut(header_index)
+                        {
+                            match self.request_state.current_header_section {
+                                HeaderSection::Name => {
+                                    header_name.pop();
+                                }
+                                HeaderSection::Value => {
+                                    header_value.pop();
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                    RequestTab::Body => {
+                        self.request_state.body.pop();
+                    }
+                    _ => {}
+                },
+                _ => {}
+            },
             KeyCode::Enter => match &self.focused_panel {
                 Panel::Method => self.method_state.show_dropdown = !self.method_state.show_dropdown,
                 Panel::Url => {}
                 Panel::Request(request_tab) => match request_tab {
                     RequestTab::Headers => match self.request_state.current_header {
-                        RequestHeaderFocus::Header(num) => {} // set editing flag
+                        RequestHeaderFocus::Header(index) => {
+                            if self.request_state.current_header_section == HeaderSection::Delete {
+                                self.request_state.headers.remove(index);
+                                if index >= self.request_state.headers.len() {
+                                    self.request_state.current_header = RequestHeaderFocus::Add;
+                                }
+                            }
+                        }
                         RequestHeaderFocus::Add => self
                             .request_state
                             .headers
