@@ -33,10 +33,10 @@ impl Application {
                 url_input: String::new(),
             },
             request_state: RequestState {
-                body: String::new(),
+                headers: Vec::new(),
                 current_header: RequestHeaderFocus::Add,
                 current_header_section: HeaderSection::Name,
-                headers: Vec::new(),
+                body: String::new(),
                 settings: (),
             },
             response_state: ResponseState {},
