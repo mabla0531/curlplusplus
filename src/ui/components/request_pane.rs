@@ -71,22 +71,9 @@ impl Application {
     }
 
     pub fn render_request_headers_pane(&self, frame: &mut Frame, area: Rect) {
-        let header_elements = self
-            .request_state
-            .headers
-            .iter()
-            .cloned()
-            .enumerate()
-            .flat_map(|(index, (name, value))| {
-                header_line(
-                    name,
-                    value,
-                    self.request_state.current_header == index,
-                    self.request_state.current_header_section.clone(),
-                    area,
-                )
-            })
-            .collect::<Vec<_>>();
+        let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(2)]).split(area);
+
+        let (headers_panel, add_button_panel) = (layout[0], layout[1]);
 
         let (add_button_fg, add_button_bg) =
             match (&self.focused_panel, &self.request_state.current_header) {
@@ -99,15 +86,47 @@ impl Application {
         let add_header_button =
             Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
 
-        let list = Paragraph::new(Text::from_iter(
-            [header_elements, vec![add_header_button, Line::from("")]]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>(),
-        ))
-        .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
+        let viewable_header_count = headers_panel.height as usize / 2;
 
-        frame.render_widget(list, area);
+        let index = match self.request_state.current_header {
+            RequestHeaderFocus::Header(index) => index,
+            RequestHeaderFocus::Add => self.request_state.headers.len().saturating_sub(1),
+        };
+
+        let mut offset = index.saturating_sub(viewable_header_count / 2);
+
+        if offset + viewable_header_count > self.request_state.headers.len() {
+            offset = self
+                .request_state
+                .headers
+                .len()
+                .saturating_sub(viewable_header_count);
+        }
+
+        let begin = offset;
+        let end = (offset + viewable_header_count).min(self.request_state.headers.len());
+        let trimmed = &self.request_state.headers[begin..end];
+
+        let header_elements = trimmed
+            .iter()
+            .cloned()
+            .enumerate()
+            .flat_map(|(index, (name, value))| {
+                header_line(
+                    name,
+                    value,
+                    self.request_state.current_header == index + offset,
+                    self.request_state.current_header_section.clone(),
+                    area,
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let list = Paragraph::new(Text::from_iter(header_elements))
+            .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
+
+        frame.render_widget(list, headers_panel);
+        frame.render_widget(add_header_button, add_button_panel);
     }
 
     pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {}
