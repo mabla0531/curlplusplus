@@ -71,7 +71,7 @@ impl Application {
     }
 
     pub fn render_request_headers_pane(&self, frame: &mut Frame, area: Rect) {
-        let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(2)]).split(area);
+        let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
 
         let (headers_panel, add_button_panel) = (layout[0], layout[1]);
 
