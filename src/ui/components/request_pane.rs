@@ -26,25 +26,25 @@ impl Application {
             _ => Style::new().fg(palette::TEXT),
         };
 
-        let (headers_fg, headers_bg) = match self.focused_panel {
+        let (headers_tab_fg, headers_tab_bg) = match self.focused_panel {
             Panel::Request(RequestTab::Headers) => (palette::SAPPHIRE, palette::SURFACE2),
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
-        let (body_fg, body_bg) = match self.focused_panel {
+        let (body_tab_fg, body_tab_bg) = match self.focused_panel {
             Panel::Request(RequestTab::Body) => (palette::SAPPHIRE, palette::SURFACE2),
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
-        let (settings_fg, settings_bg) = match self.focused_panel {
+        let (settings_tab_fg, settings_tab_bg) = match self.focused_panel {
             Panel::Request(RequestTab::Settings) => (palette::SAPPHIRE, palette::SURFACE2),
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
         let tabs = [
-            badge("Headers", Some(headers_fg), headers_bg),
-            badge("Body", Some(body_fg), body_bg),
-            badge("Settings", Some(settings_fg), settings_bg),
+            badge("Headers", Some(headers_tab_fg), headers_tab_bg),
+            badge("Body", Some(body_tab_fg), body_tab_bg),
+            badge("Settings", Some(settings_tab_fg), settings_tab_bg),
         ]
         .concat();
 
@@ -138,13 +138,15 @@ impl Application {
 
         frame.render_widget(list, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
-        frame.render_widget(
-            scrollbar,
-            Rect {
-                y: scroll_panel.y + scrollbar_position as u16,
-                ..scroll_panel
-            },
-        );
+        if self.request_state.headers.len() > viewable_header_count {
+            frame.render_widget(
+                scrollbar,
+                Rect {
+                    y: scroll_panel.y + scrollbar_position as u16,
+                    ..scroll_panel
+                },
+            );
+        }
     }
 
     pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {}
@@ -160,7 +162,7 @@ fn header_line<'a>(
     area: Rect,
 ) -> [Line<'a>; 2] {
     let padding = 1_usize;
-    let name_field_width = 16_usize;
+    let name_field_width = 28_usize;
 
     // magic number guide: 2 is name field badge side characters, 1 is colon separator
     let value_field_width =
@@ -178,6 +180,8 @@ fn header_line<'a>(
         format!("{}{}", name, name_padding),
         Some(palette::TEXT),
         if focused && section == HeaderSection::Name {
+            palette::SURFACE2
+        } else if focused {
             palette::SURFACE1
         } else {
             palette::SURFACE0
@@ -190,6 +194,8 @@ fn header_line<'a>(
         format!("{}{}", value, value_padding),
         Some(palette::TEXT),
         if focused && section == HeaderSection::Value {
+            palette::SURFACE2
+        } else if focused {
             palette::SURFACE1
         } else {
             palette::SURFACE0
@@ -204,6 +210,8 @@ fn header_line<'a>(
             Some(palette::MAROON)
         },
         if focused && section == HeaderSection::Delete {
+            palette::SURFACE2
+        } else if focused {
             palette::SURFACE1
         } else {
             palette::SURFACE0
