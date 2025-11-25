@@ -90,7 +90,14 @@ impl Application {
                             if self.request_state.current_header_section == HeaderSection::Delete {
                                 self.request_state.headers.remove(index);
                                 if index >= self.request_state.headers.len() {
-                                    self.request_state.current_header = RequestHeaderFocus::Add;
+                                    self.request_state.current_header =
+                                        if self.request_state.headers.len() > 0 {
+                                            RequestHeaderFocus::Header(
+                                                self.request_state.headers.len() - 1,
+                                            )
+                                        } else {
+                                            RequestHeaderFocus::Add
+                                        }
                                 }
                             }
                         }
