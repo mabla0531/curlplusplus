@@ -72,20 +72,10 @@ impl Application {
 
     pub fn render_request_headers_pane(&self, frame: &mut Frame, area: Rect) {
         let layout = Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
-
-        let (headers_panel, add_button_panel) = (layout[0], layout[1]);
-
-        let (add_button_fg, add_button_bg) =
-            match (&self.focused_panel, &self.request_state.current_header) {
-                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
-                    (palette::SUBTEXT1, palette::SURFACE1)
-                }
-                _ => (palette::SUBTEXT0, palette::SURFACE0),
-            };
-
-        let add_header_button =
-            Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
-
+        let (untrimmed_headers_panel, add_button_panel) = (layout[0], layout[1]);
+        let header_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)])
+            .split(untrimmed_headers_panel);
+        let (headers_panel, scroll_panel) = (header_layout[0], header_layout[1]);
         let viewable_header_count = headers_panel.height as usize / 2;
 
         let index = match self.request_state.current_header {
@@ -125,8 +115,33 @@ impl Application {
         let list = Paragraph::new(Text::from_iter(header_elements))
             .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
 
+        let (add_button_fg, add_button_bg) =
+            match (&self.focused_panel, &self.request_state.current_header) {
+                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
+                    (palette::SUBTEXT1, palette::SURFACE1)
+                }
+                _ => (palette::SUBTEXT0, palette::SURFACE0),
+            };
+
+        let add_header_button =
+            Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
+
+        let scrollbar_position = index
+            .checked_div(self.request_state.headers.len().saturating_sub(1))
+            .unwrap_or(0)
+            * headers_panel.height as usize;
+
+        let scrollbar = Paragraph::new(Line::styled("|", Style::new().fg(palette::TEXT)));
+
         frame.render_widget(list, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
+        frame.render_widget(
+            scrollbar,
+            Rect {
+                y: scroll_panel.y + scrollbar_position as u16,
+                ..scroll_panel
+            },
+        );
     }
 
     pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {}
