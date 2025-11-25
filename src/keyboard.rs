@@ -39,8 +39,9 @@ impl Application {
                             }
                         }
                     }
-                    RequestTab::Body => {}
-                    RequestTab::Settings => {}
+                    RequestTab::Body => {
+                        self.request_state.body.push(character);
+                    }
                 },
                 _ => {}
             },
@@ -77,7 +78,6 @@ impl Application {
                     RequestTab::Body => {
                         self.request_state.body.pop();
                     }
-                    _ => {}
                 },
                 _ => {}
             },
@@ -107,7 +107,6 @@ impl Application {
                             .push((String::new(), String::new())),
                     },
                     RequestTab::Body => {}
-                    RequestTab::Settings => {}
                 },
                 Panel::Response(response_tab) => {}
             },
@@ -132,7 +131,6 @@ impl Application {
                         }
                     }
                     RequestTab::Body => {}
-                    RequestTab::Settings => {}
                 },
 
                 _ => {}
@@ -157,7 +155,6 @@ impl Application {
                         }
                     }
                     RequestTab::Body => {}
-                    RequestTab::Settings => {}
                 },
                 _ => {}
             },
@@ -167,7 +164,6 @@ impl Application {
                         self.request_state.current_header_section.decrement();
                     }
                     RequestTab::Body => {}
-                    RequestTab::Settings => {}
                 },
                 Panel::Response(response_tab) => {}
                 _ => {}
@@ -191,9 +187,8 @@ impl Application {
                         self.request_state.current_header_section.increment();
                     }
                     RequestTab::Body => {}
-                    RequestTab::Settings => {}
                 },
-                Panel::Response(request_tab) => {}
+                Panel::Response(response_tab) => {}
                 _ => {}
             },
             KeyCode::Esc => self.exit_request = true,

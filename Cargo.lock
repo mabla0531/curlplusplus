@@ -245,6 +245,7 @@ dependencies = [
  "openapi",
  "ratatui",
  "reqwest",
+ "serde_json",
 ]
 
 [[package]]

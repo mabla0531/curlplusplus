@@ -31,7 +31,6 @@ pub struct ResponseState {}
 pub enum RequestTab {
     Headers,
     Body,
-    Settings,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -110,8 +109,7 @@ impl Panel {
             Self::Method => Self::Url,
             Self::Url => Self::Request(RequestTab::Headers),
             Self::Request(RequestTab::Headers) => Self::Request(RequestTab::Body),
-            Self::Request(RequestTab::Body) => Self::Request(RequestTab::Settings),
-            Self::Request(RequestTab::Settings) => Self::Response(ResponseTab::Data),
+            Self::Request(RequestTab::Body) => Self::Response(ResponseTab::Data),
             Self::Response(ResponseTab::Data) => Self::Response(ResponseTab::Body),
             Self::Response(ResponseTab::Body) => Self::Method,
         }
@@ -123,8 +121,7 @@ impl Panel {
             Self::Url => Self::Method,
             Self::Request(RequestTab::Headers) => Self::Url,
             Self::Request(RequestTab::Body) => Self::Request(RequestTab::Headers),
-            Self::Request(RequestTab::Settings) => Self::Request(RequestTab::Body),
-            Self::Response(ResponseTab::Data) => Self::Request(RequestTab::Settings),
+            Self::Response(ResponseTab::Data) => Self::Request(RequestTab::Body),
             Self::Response(ResponseTab::Body) => Self::Response(ResponseTab::Data),
         }
     }
