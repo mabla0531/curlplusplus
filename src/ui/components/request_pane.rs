@@ -1,3 +1,4 @@
+use serde_json::Value;
 use std::iter;
 
 use ratatui::{
@@ -36,15 +37,9 @@ impl Application {
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
-        let (settings_tab_fg, settings_tab_bg) = match self.focused_panel {
-            Panel::Request(RequestTab::Settings) => (palette::SAPPHIRE, palette::SURFACE2),
-            _ => (palette::SUBTEXT0, palette::SURFACE0),
-        };
-
         let tabs = [
             badge("Headers", Some(headers_tab_fg), headers_tab_bg),
             badge("Body", Some(body_tab_fg), body_tab_bg),
-            badge("Settings", Some(settings_tab_fg), settings_tab_bg),
         ]
         .concat();
 
@@ -52,7 +47,6 @@ impl Application {
             match request_tab {
                 RequestTab::Headers => self.render_request_headers_pane(frame, content_area),
                 RequestTab::Body => self.render_request_body_pane(frame, content_area),
-                RequestTab::Settings => self.render_request_settings_pane(frame, content_area),
             }
         } else {
             self.render_request_headers_pane(frame, content_area);
@@ -130,9 +124,7 @@ impl Application {
             / self.request_state.headers.len().saturating_sub(1) as f64
             * headers_panel.height as f64;
 
-        let scrollbar_position = (scrollbar_position as u32)
-            .min(headers_panel.height as u32)
-            .max(0);
+        let scrollbar_position = (scrollbar_position as u32).min(headers_panel.height as u32);
 
         let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
 
@@ -149,9 +141,32 @@ impl Application {
         }
     }
 
-    pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {}
+    pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {
+        let request_body_layout =
+            Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
+        let (body_panel, status_panel) = (request_body_layout[0], request_body_layout[1]);
 
-    pub fn render_request_settings_pane(&self, frame: &mut Frame, area: Rect) {}
+        let status_text = if !self.request_state.body.is_empty() {
+            match serde_json::from_str::<Value>(&self.request_state.body) {
+                Ok(_) => "good!".to_string(),
+                Err(e) => {
+                    format!("Error at line {} column {}", e.line(), e.column())
+                }
+            }
+        } else {
+            String::new()
+        };
+
+        frame.render_widget(
+            Paragraph::new(self.request_state.body.clone())
+                .block(Block::new().padding(Padding::new(1, 1, 1, 1))),
+            body_panel,
+        );
+        frame.render_widget(
+            Paragraph::new(status_text).block(Block::new().padding(Padding::new(1, 1, 0, 0))),
+            status_panel,
+        );
+    }
 }
 
 fn header_line<'a>(
