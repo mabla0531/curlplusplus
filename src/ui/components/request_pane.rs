@@ -126,12 +126,15 @@ impl Application {
         let add_header_button =
             Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
 
-        let scrollbar_position = index
-            .checked_div(self.request_state.headers.len().saturating_sub(1))
-            .unwrap_or(0)
-            * headers_panel.height as usize;
+        let scrollbar_position = index as f64
+            / self.request_state.headers.len().saturating_sub(1) as f64
+            * headers_panel.height as f64;
 
-        let scrollbar = Paragraph::new(Line::styled("|", Style::new().fg(palette::TEXT)));
+        let scrollbar_position = (scrollbar_position as u32)
+            .min(headers_panel.height as u32)
+            .max(0);
+
+        let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
 
         frame.render_widget(list, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
@@ -166,8 +169,9 @@ fn header_line<'a>(
     let name_padding_len = name_field_width.saturating_sub(name.len());
     let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
     let value_padding_len = value_field_width
-        .saturating_sub(value.len() + 5)
-        .min(value_field_width); // 5 == trashcan badge
+        .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why!))
+        .min(value_field_width);
+
     let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
 
     let name_badge = badge(
