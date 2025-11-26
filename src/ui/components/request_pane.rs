@@ -146,16 +146,19 @@ impl Application {
             Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
         let (body_panel, status_panel) = (request_body_layout[0], request_body_layout[1]);
 
-        let status_text = if !self.request_state.body.is_empty() {
+        let (status_text, error_position) = if !self.request_state.body.is_empty() {
             match serde_json::from_str::<Value>(&self.request_state.body) {
-                Ok(_) => Span::styled("valid".to_string(), Style::new().fg(palette::GREEN)),
-                Err(e) => Span::styled(
-                    format!("Error at line {} column {}", e.line(), e.column()),
-                    Style::new().fg(palette::RED),
+                Ok(_) => (
+                    Span::styled("Valid".to_string(), Style::new().fg(palette::GREEN)),
+                    None,
+                ),
+                Err(e) => (
+                    Span::styled("Invalid", Style::new().fg(palette::RED)),
+                    Some((e.line(), e.column())),
                 ),
             }
         } else {
-            Span::raw("")
+            (Span::raw(""), None)
         };
 
         frame.render_widget(
