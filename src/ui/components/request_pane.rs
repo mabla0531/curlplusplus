@@ -70,7 +70,7 @@ impl Application {
         let header_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)])
             .split(untrimmed_headers_panel);
         let (headers_panel, scroll_panel) = (header_layout[0], header_layout[1]);
-        let viewable_header_count = headers_panel.height as usize / 2;
+        let viewable_header_count = (headers_panel.height as usize / 2) - 1;
 
         let index = match self.request_state.current_header {
             RequestHeaderFocus::Header(index) => index,
@@ -148,13 +148,14 @@ impl Application {
 
         let status_text = if !self.request_state.body.is_empty() {
             match serde_json::from_str::<Value>(&self.request_state.body) {
-                Ok(_) => "good!".to_string(),
-                Err(e) => {
-                    format!("Error at line {} column {}", e.line(), e.column())
-                }
+                Ok(_) => Span::styled("valid".to_string(), Style::new().fg(palette::GREEN)),
+                Err(e) => Span::styled(
+                    format!("Error at line {} column {}", e.line(), e.column()),
+                    Style::new().fg(palette::RED),
+                ),
             }
         } else {
-            String::new()
+            Span::raw("")
         };
 
         frame.render_widget(
