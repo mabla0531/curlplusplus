@@ -1,3 +1,4 @@
+use core::error;
 use serde_json::Value;
 use std::iter;
 
@@ -147,7 +148,7 @@ impl Application {
         let (body_panel, status_panel) = (request_body_layout[0], request_body_layout[1]);
 
         let (status_text, error_position) = if !self.request_state.body.is_empty() {
-            match serde_json::from_str::<Value>(&self.request_state.body) {
+            match serde_json::from_str::<Value>(&self.request_state.body.join("\n")) {
                 Ok(_) => (
                     Span::styled("Valid".to_string(), Style::new().fg(palette::GREEN)),
                     None,
@@ -162,8 +163,30 @@ impl Application {
         };
 
         frame.render_widget(
-            Paragraph::new(self.request_state.body.clone())
-                .block(Block::new().padding(Padding::new(1, 1, 1, 1))),
+            Paragraph::new(Text::from_iter(
+                self.request_state
+                    .body
+                    .iter()
+                    .cloned()
+                    .enumerate()
+                    .map(|(index, line)| {
+                        if let Some((error_line, error_column)) = error_position
+                            && index == error_line.saturating_sub(1)
+                        {
+                            let (left, temp_right) = line.split_at(error_column);
+                            let (error, right) = temp_right.split_at(1);
+
+                            Line::from_iter([
+                                Span::from(left.to_string()),
+                                Span::styled(error.to_string(), Style::new().bg(palette::RED)),
+                                Span::from(right.to_string()),
+                            ])
+                        } else {
+                            Line::from(line)
+                        }
+                    }),
+            ))
+            .block(Block::new().padding(Padding::new(1, 1, 1, 1))),
             body_panel,
         );
         frame.render_widget(

@@ -20,8 +20,15 @@ pub struct RequestState {
     pub headers: Vec<(String, String)>,
     pub current_header: RequestHeaderFocus,
     pub current_header_section: HeaderSection,
-    pub body: String,
+    pub body: Vec<String>,
+    pub body_cursor: BodyCursor,
     pub settings: (),
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct BodyCursor {
+    pub line: usize,
+    pub column: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

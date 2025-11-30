@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{
     Application,
-    state::{HeaderSection, Panel, RequestHeaderFocus, RequestTab},
+    state::{BodyCursor, HeaderSection, Panel, RequestHeaderFocus, RequestTab},
 };
 
 use crate::state::Method;
@@ -40,7 +40,12 @@ impl Application {
                         }
                     }
                     RequestTab::Body => {
-                        self.request_state.body.push(character);
+                        let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
+                        if let Some(line) = self.request_state.body.get_mut(body_cursor.line) {
+                            line.insert(body_cursor.column.min(line.len()), character);
+                            body_cursor.column =
+                                (body_cursor.column + 1).min(line.len().saturating_sub(1));
+                        }
                     }
                 },
                 _ => {}
@@ -76,7 +81,30 @@ impl Application {
                         }
                     }
                     RequestTab::Body => {
-                        self.request_state.body.pop();
+                        let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
+                        let body = &mut self.request_state.body;
+                        if let Some(line) = body.get_mut(body_cursor.line) {
+                            if line.is_empty() {
+                                body.remove(body_cursor.line);
+                                body_cursor.line = body_cursor.line.saturating_sub(1);
+                                body_cursor.column = self
+                                    .request_state
+                                    .body
+                                    .get(body_cursor.line)
+                                    .unwrap_or(&String::new())
+                                    .len()
+                                    .saturating_sub(1);
+                            } else {
+                                if body_cursor.column < line.len() - 1 {
+                                    line.remove(body_cursor.column);
+                                } else {
+                                    line.pop();
+                                }
+                                body_cursor.column = body_cursor.column.saturating_sub(1);
+                            }
+                        } else {
+                            body_cursor.line = body.len().saturating_sub(1);
+                        }
                     }
                 },
                 _ => {}
@@ -91,7 +119,7 @@ impl Application {
                                 self.request_state.headers.remove(index);
                                 if index >= self.request_state.headers.len() {
                                     self.request_state.current_header =
-                                        if self.request_state.headers.len() > 0 {
+                                        if !self.request_state.headers.is_empty() {
                                             RequestHeaderFocus::Header(
                                                 self.request_state.headers.len() - 1,
                                             )
@@ -106,7 +134,11 @@ impl Application {
                             .headers
                             .push((String::new(), String::new())),
                     },
-                    RequestTab::Body => {}
+                    RequestTab::Body => {
+                        self.request_state.body.push(String::new());
+                        self.request_state.body_cursor.line += 1;
+                        self.request_state.body_cursor.column = 0;
+                    }
                 },
                 Panel::Response(response_tab) => {}
             },
@@ -130,7 +162,11 @@ impl Application {
                             }
                         }
                     }
-                    RequestTab::Body => {}
+                    RequestTab::Body => {
+                        let body_cursor = &mut self.request_state.body_cursor;
+
+                        body_cursor.line = body_cursor.line.saturating_sub(1);
+                    }
                 },
 
                 _ => {}
@@ -154,7 +190,12 @@ impl Application {
                                 }
                         }
                     }
-                    RequestTab::Body => {}
+                    RequestTab::Body => {
+                        let body_cursor = &mut self.request_state.body_cursor;
+
+                        body_cursor.line =
+                            (body_cursor.line + 1).min(self.request_state.body.len() - 1);
+                    }
                 },
                 _ => {}
             },
@@ -163,7 +204,21 @@ impl Application {
                     RequestTab::Headers => {
                         self.request_state.current_header_section.decrement();
                     }
-                    RequestTab::Body => {}
+                    RequestTab::Body => {
+                        let body_cursor = &mut self.request_state.body_cursor;
+                        if body_cursor.column < 1 {
+                            body_cursor.line = body_cursor.line.saturating_sub(1);
+                            body_cursor.column = self
+                                .request_state
+                                .body
+                                .get(body_cursor.line)
+                                .unwrap_or(&String::new())
+                                .len()
+                                .saturating_sub(1);
+                        } else {
+                            body_cursor.column = body_cursor.column.saturating_sub(1);
+                        }
+                    }
                 },
                 Panel::Response(response_tab) => {}
                 _ => {}
@@ -186,7 +241,30 @@ impl Application {
                     RequestTab::Headers => {
                         self.request_state.current_header_section.increment();
                     }
-                    RequestTab::Body => {}
+                    RequestTab::Body => {
+                        let body_cursor = &mut self.request_state.body_cursor;
+                        if body_cursor.column
+                            >= self
+                                .request_state
+                                .body
+                                .get(body_cursor.line)
+                                .unwrap_or(&String::new())
+                                .len()
+                                .saturating_sub(1)
+                        {
+                            body_cursor.line = (body_cursor.line + 1)
+                                .min(self.request_state.body.len().saturating_sub(1));
+                            body_cursor.column = self
+                                .request_state
+                                .body
+                                .get(body_cursor.line)
+                                .unwrap_or(&String::new())
+                                .len()
+                                .saturating_sub(1);
+                        } else {
+                            body_cursor.column += 1;
+                        }
+                    }
                 },
                 Panel::Response(response_tab) => {}
                 _ => {}
