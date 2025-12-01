@@ -3,6 +3,7 @@ mod state;
 mod ui;
 
 use crossterm::{
+    cursor::SetCursorStyle,
     event::{self, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
@@ -64,17 +65,18 @@ impl Application {
 }
 
 fn main() -> io::Result<()> {
-    // Setup terminal
     enable_raw_mode()?;
+
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
 
-    // Run app
+    let backend = CrosstermBackend::new(stdout);
+
+    let mut terminal = Terminal::new(backend)?;
+    execute!(terminal.backend_mut(), SetCursorStyle::BlinkingBar)?;
+
     let res = Application::new().run(&mut terminal);
 
-    // Restore terminal
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
     terminal.show_cursor()?;
