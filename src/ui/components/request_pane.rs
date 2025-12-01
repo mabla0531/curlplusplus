@@ -1,10 +1,11 @@
 use core::error;
+use crossterm::{execute, terminal};
 use serde_json::Value;
 use std::iter;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Constraint, Layout, Margin, Position, Rect},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
@@ -154,7 +155,10 @@ impl Application {
                     None,
                 ),
                 Err(e) => (
-                    Span::styled("Invalid", Style::new().fg(palette::RED)),
+                    Span::styled(
+                        format!("Invalid - Line {} Column {}", e.line(), e.column()),
+                        Style::new().fg(palette::RED),
+                    ),
                     Some((e.line(), e.column())),
                 ),
             }
@@ -173,14 +177,17 @@ impl Application {
                         if let Some((error_line, error_column)) = error_position
                             && index == error_line.saturating_sub(1)
                         {
-                            let (left, temp_right) = line.split_at(error_column);
-                            let (error, right) = temp_right.split_at(1);
+                            let spans = line.chars().enumerate().map(|(c_idx, c)| {
+                                let style = if c_idx == error_column.saturating_sub(1) {
+                                    Style::new().bg(palette::RED)
+                                } else {
+                                    Style::new()
+                                };
 
-                            Line::from_iter([
-                                Span::from(left.to_string()),
-                                Span::styled(error.to_string(), Style::new().bg(palette::RED)),
-                                Span::from(right.to_string()),
-                            ])
+                                Span::styled(c.to_string(), style)
+                            });
+
+                            Line::from_iter(spans)
                         } else {
                             Line::from(line)
                         }
@@ -193,6 +200,20 @@ impl Application {
             Paragraph::new(status_text).block(Block::new().padding(Padding::new(1, 1, 0, 0))),
             status_panel,
         );
+
+        let cursor_position = Position {
+            x: (self.request_state.body_cursor.column).min(
+                self.request_state
+                    .body
+                    .get(self.request_state.body_cursor.line)
+                    .unwrap_or(&String::new())
+                    .len(),
+            ) as u16
+                + body_panel.x
+                + 1,
+            y: self.request_state.body_cursor.line as u16 + body_panel.y + 1,
+        };
+        frame.set_cursor_position(cursor_position);
     }
 }
 
