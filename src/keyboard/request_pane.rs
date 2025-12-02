@@ -95,7 +95,32 @@ impl Application {
                         .push((String::new(), String::new())),
                 },
                 RequestTab::Body => {
-                    self.request_state.body.push(String::new());
+                    let body_cursor = &mut self.request_state.body_cursor;
+                    let prev_line = self
+                        .request_state
+                        .body
+                        .get(body_cursor.line)
+                        .cloned()
+                        .unwrap_or(String::new());
+
+                    let before_string = prev_line
+                        .get(0..body_cursor.column)
+                        .unwrap_or_default()
+                        .to_string();
+
+                    let after_string = prev_line
+                        .get(body_cursor.column..)
+                        .unwrap_or_default()
+                        .to_string();
+
+                    let body = &mut self.request_state.body;
+
+                    if let Some(line) = body.get_mut(body_cursor.line) {
+                        *line = before_string;
+                    };
+
+                    body.insert(body_cursor.line + 1, after_string);
+
                     self.request_state.body_cursor.line += 1;
                     self.request_state.body_cursor.column = 0;
                 }
