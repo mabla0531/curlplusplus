@@ -72,7 +72,7 @@ impl Application {
         let header_layout = Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)])
             .split(untrimmed_headers_panel);
         let (headers_panel, scroll_panel) = (header_layout[0], header_layout[1]);
-        let viewable_header_count = (headers_panel.height as usize / 2) - 1;
+        let viewable_header_count = (headers_panel.height as usize / 2).saturating_sub(1);
 
         let index = match self.request_state.current_header {
             RequestHeaderFocus::Header(index) => index,
