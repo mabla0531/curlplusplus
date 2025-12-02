@@ -47,17 +47,20 @@ impl Application {
                 RequestTab::Body => {
                     let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
                     let body = &mut self.request_state.body;
+                    body_cursor.column = body_cursor
+                        .column
+                        .min(body.get(body_cursor.line).unwrap_or(&String::new()).len());
+
                     let body_len = body.len();
                     if let Some(line) = body.get_mut(body_cursor.line) {
-                        if line.is_empty() && body_len > 1 {
-                            body.remove(body_cursor.line);
+                        if body_len > 1 && body_cursor.column == 0 && body_cursor.line > 0 {
+                            let carryover = body.remove(body_cursor.line);
                             body_cursor.line = body_cursor.line.saturating_sub(1);
-                            body_cursor.column = self
-                                .request_state
-                                .body
-                                .get(body_cursor.line)
-                                .unwrap_or(&String::new())
-                                .len();
+                            body_cursor.column =
+                                body.get(body_cursor.line).unwrap_or(&String::new()).len();
+                            if let Some(current_line) = body.get_mut(body_cursor.line) {
+                                current_line.push_str(&carryover);
+                            }
                         } else {
                             *line = [
                                 line.get(0..body_cursor.column.saturating_sub(1))
