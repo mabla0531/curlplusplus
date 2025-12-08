@@ -1,5 +1,3 @@
-use core::error;
-use crossterm::{execute, terminal};
 use serde_json::Value;
 use std::iter;
 
@@ -173,24 +171,21 @@ impl Application {
                     .iter()
                     .cloned()
                     .enumerate()
-                    .map(|(index, line)| {
-                        if let Some((error_line, error_column)) = error_position
-                            && index == error_line.saturating_sub(1)
-                        {
-                            let spans = line.chars().enumerate().map(|(c_idx, c)| {
-                                let style = if c_idx == error_column.saturating_sub(1) {
-                                    Style::new().bg(palette::RED)
-                                } else {
-                                    Style::new()
-                                };
+                    .map(|(line_idx, line)| {
+                        let spans = line.chars().enumerate().map(|(char_idx, c)| {
+                            let style = if let Some((error_line, error_column)) = error_position
+                                && line_idx == error_line.saturating_sub(1)
+                                && char_idx == error_column.saturating_sub(1)
+                            {
+                                Style::new().bg(palette::RED)
+                            } else {
+                                Style::new()
+                            };
 
-                                Span::styled(c.to_string(), style)
-                            });
+                            Span::styled(c.to_string(), style)
+                        });
 
-                            Line::from_iter(spans)
-                        } else {
-                            Line::from(line)
-                        }
+                        Line::from_iter(spans)
                     }),
             ))
             .block(Block::new().padding(Padding::new(1, 1, 1, 1))),
@@ -213,6 +208,7 @@ impl Application {
                 + 1,
             y: self.request_state.body_cursor.line as u16 + body_panel.y + 1,
         };
+        
         frame.set_cursor_position(cursor_position);
     }
 }

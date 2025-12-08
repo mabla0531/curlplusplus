@@ -1,18 +1,18 @@
 use ratatui::{
-    Frame,
     layout::Rect,
     style::Style,
     text::Line,
     widgets::{Block, BorderType, Borders, Paragraph},
+    Frame,
 };
 
 use std::iter;
 
 use crate::{
-    Application,
     state::{Method, Panel},
     ui::components::badge::badge,
     ui::palette,
+    Application,
 };
 
 impl Application {

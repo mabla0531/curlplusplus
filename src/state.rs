@@ -4,8 +4,6 @@
 
 use std::fmt::Display;
 
-use ratatui::layout::Position;
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MethodState {
     pub current_method: Method,
@@ -57,7 +55,7 @@ impl PartialEq<usize> for RequestHeaderFocus {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResponseTab {
     Data,
     Body,

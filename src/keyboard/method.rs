@@ -1,11 +1,11 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{Application, state::Method};
+use crate::{state::Method, Application};
 
 impl Application {
     pub fn handle_method_input(&mut self, event: KeyEvent) {
         match event.code {
-            KeyCode::Char(character) => {
+            KeyCode::Char(character) if self.editing => {
                 self.method_state.current_method = match character {
                     'g' | 'G' => Method::Get,
                     'p' | 'P' => Method::Post,
@@ -19,7 +19,7 @@ impl Application {
                     _ => self.method_state.current_method.clone(),
                 }
             }
-            KeyCode::Enter => self.method_state.show_dropdown = !self.method_state.show_dropdown,
+            KeyCode::Enter => self.editing = !self.editing,
             KeyCode::Up => self.method_state.current_method.decrement(),
             KeyCode::Down => self.method_state.current_method.increment(),
             _ => {}
