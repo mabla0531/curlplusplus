@@ -6,8 +6,16 @@ use crossterm::event::{KeyCode, KeyEvent};
 impl Application {
     pub fn handle_request_pane_input(&mut self, event: KeyEvent, request_tab: RequestTab) {
         match event.code {
+            KeyCode::Char('a') | KeyCode::Char('A') if !self.editing => {
+                self.editing = true;
+                let body_cursor = &mut self.request_state.body_cursor;
+                body_cursor.column = (body_cursor.column + 1).min(self.request_state.body.get(body_cursor.line).unwrap_or(&String::new()).len());
+            }
+            KeyCode::Char('i') | KeyCode::Char('I') if !self.editing => {
+                self.editing = true;
+            }
             KeyCode::Char(character) => match request_tab {
-                RequestTab::Headers => {
+                RequestTab::Headers if self.editing => {
                     if let RequestHeaderFocus::Header(header) = self.request_state.current_header
                         && let Some(name) = self.request_state.headers.get_mut(header)
                     {
@@ -18,15 +26,16 @@ impl Application {
                         }
                     }
                 }
-                RequestTab::Body => {
+                RequestTab::Body if self.editing => {
                     let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
                     if let Some(line) = self.request_state.body.get_mut(body_cursor.line) {
                         line.insert(body_cursor.column.min(line.len()), character);
                         body_cursor.column = (body_cursor.column + 1).min(line.len());
                     }
                 }
+                _ => {}
             },
-            KeyCode::Backspace => match request_tab {
+            KeyCode::Backspace if self.editing => match request_tab {
                 RequestTab::Headers => {
                     if let RequestHeaderFocus::Header(header_index) =
                         self.request_state.current_header
@@ -77,25 +86,29 @@ impl Application {
             },
             KeyCode::Enter => match request_tab {
                 RequestTab::Headers => match self.request_state.current_header {
-                    RequestHeaderFocus::Header(index) => {
-                        if self.request_state.current_header_section == HeaderSection::Delete {
-                            self.request_state.headers.remove(index);
-                            if index >= self.request_state.headers.len() {
-                                self.request_state.current_header =
-                                    if !self.request_state.headers.is_empty() {
-                                        RequestHeaderFocus::Header(
-                                            self.request_state.headers.len() - 1,
-                                        )
-                                    } else {
-                                        RequestHeaderFocus::Add
-                                    }
-                            }
+                    RequestHeaderFocus::Header(index) if self.request_state.current_header_section == HeaderSection::Delete => {
+                        self.request_state.headers.remove(index);
+                        if index >= self.request_state.headers.len() {
+                            self.request_state.current_header =
+                                if !self.request_state.headers.is_empty() {
+                                    RequestHeaderFocus::Header(
+                                        self.request_state.headers.len() - 1,
+                                    )
+                                } else {
+                                    RequestHeaderFocus::Add
+                                }
                         }
+                    }
+                    RequestHeaderFocus::Header(_) => {
+                        self.editing = !self.editing;
                     }
                     RequestHeaderFocus::Add => self
                         .request_state
                         .headers
                         .push((String::new(), String::new())),
+                },
+                RequestTab::Body if !self.editing => {
+                    self.editing = true;
                 },
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
@@ -111,10 +124,21 @@ impl Application {
                         .unwrap_or_default()
                         .to_string();
 
+                    let mut after_string_indent = String::new();
+                    for i in 0..before_string.len() {
+                        if before_string.get(i..=i) == Some(" ") {
+                            after_string_indent.push(' ');
+                        } else {
+                            break;
+                        }
+                    }
+
                     let after_string = prev_line
                         .get(body_cursor.column..)
                         .unwrap_or_default()
                         .to_string();
+
+                    let after_string = format!("{}{}", after_string_indent, after_string);
 
                     let body = &mut self.request_state.body;
 
@@ -125,7 +149,7 @@ impl Application {
                     body.insert(body_cursor.line + 1, after_string);
 
                     self.request_state.body_cursor.line += 1;
-                    self.request_state.body_cursor.column = 0;
+                    self.request_state.body_cursor.column = after_string_indent.len();
                 }
             },
             KeyCode::Up => match request_tab {
@@ -175,8 +199,10 @@ impl Application {
                         (body_cursor.line + 1).min(self.request_state.body.len() - 1);
                 }
             },
-
             KeyCode::Left => match request_tab {
+                RequestTab::Headers if self.editing => {
+                    // TODO Move header cursor
+                }
                 RequestTab::Headers => {
                     self.request_state.current_header_section.decrement();
                 }
@@ -195,8 +221,10 @@ impl Application {
                     }
                 }
             },
-
             KeyCode::Right => match request_tab {
+                RequestTab::Headers if self.editing => {
+                    // TODO Move header cursor
+                }
                 RequestTab::Headers => {
                     self.request_state.current_header_section.increment();
                 }
@@ -220,6 +248,24 @@ impl Application {
                     }
                 }
             },
+            KeyCode::Tab if request_tab == RequestTab::Body && self.editing => {
+                let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
+                if let Some(line) = self.request_state.body.get_mut(body_cursor.line) {
+                    line.insert_str(0, "    ");
+                    body_cursor.column = (body_cursor.column + 4).min(line.len());
+                }
+            }
+            KeyCode::BackTab if request_tab == RequestTab::Body && self.editing => {
+                let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
+                if let Some(line) = self.request_state.body.get_mut(body_cursor.line) {
+                    for _ in 0..4 {
+                        if let Some(" ") = line.get(0..=0) {
+                            line.remove(0);
+                            body_cursor.column = body_cursor.column.saturating_sub(1);
+                        }
+                    }
+                }
+            }
             _ => {}
         }
     }

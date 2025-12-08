@@ -19,6 +19,7 @@ pub struct Application {
     pub url_state: UrlState,
     pub request_state: RequestState,
     pub response_state: ResponseState,
+    pub editing: bool,
     pub exit_request: bool,
 }
 
@@ -42,18 +43,20 @@ impl Application {
                 settings: (),
             },
             response_state: ResponseState {},
-
+            editing: false,
             exit_request: false,
         }
     }
 
-    fn run<T: ratatui::backend::Backend>(&mut self, terminal: &mut Terminal<T>) -> io::Result<()> {
+    fn run<T: ratatui::backend::Backend + std::io::Write>(&mut self, terminal: &mut Terminal<T>) -> io::Result<()> {
         loop {
             terminal.draw(|frame| self.render(frame))?;
 
             if event::poll(std::time::Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {
                     self.handle_input(key);
+
+                    execute!(terminal.backend_mut(), if self.editing { SetCursorStyle::BlinkingBar } else { SetCursorStyle::SteadyBlock })?;
                 }
             }
 
@@ -71,10 +74,7 @@ fn main() -> io::Result<()> {
     execute!(stdout, EnterAlternateScreen)?;
 
     let backend = CrosstermBackend::new(stdout);
-
     let mut terminal = Terminal::new(backend)?;
-    execute!(terminal.backend_mut(), SetCursorStyle::BlinkingBar)?;
-
     let res = Application::new().run(&mut terminal);
 
     disable_raw_mode()?;
