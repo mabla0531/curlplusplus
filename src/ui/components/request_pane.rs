@@ -164,30 +164,45 @@ impl Application {
             (Span::raw(""), None)
         };
 
+        let viewable_line_count = body_panel.height as usize - 2; // body panel has padding
+
+        let mut offset = self
+            .request_state
+            .body_cursor
+            .line
+            .saturating_sub(viewable_line_count / 2);
+
+        if offset + viewable_line_count > self.request_state.body.len() {
+            offset = self
+                .request_state
+                .body
+                .len()
+                .saturating_sub(viewable_line_count);
+        }
+
+        let begin = offset;
+        let end = (offset + viewable_line_count).min(self.request_state.body.len());
+        let trimmed = &self.request_state.body[begin..end];
+
         frame.render_widget(
-            Paragraph::new(Text::from_iter(
-                self.request_state
-                    .body
-                    .iter()
-                    .cloned()
-                    .enumerate()
-                    .map(|(line_idx, line)| {
-                        let spans = line.chars().enumerate().map(|(char_idx, c)| {
-                            let style = if let Some((error_line, error_column)) = error_position
-                                && line_idx == error_line.saturating_sub(1)
-                                && char_idx == error_column.saturating_sub(1)
-                            {
-                                Style::new().bg(palette::RED)
-                            } else {
-                                Style::new()
-                            };
+            Paragraph::new(Text::from_iter(trimmed.iter().enumerate().map(
+                |(line_idx, line)| {
+                    let spans = line.chars().enumerate().map(|(char_idx, c)| {
+                        let style = if let Some((error_line, error_column)) = error_position
+                            && line_idx + offset == error_line.saturating_sub(1)
+                            && char_idx == error_column.saturating_sub(1)
+                        {
+                            Style::new().bg(palette::RED)
+                        } else {
+                            Style::new()
+                        };
 
-                            Span::styled(c.to_string(), style)
-                        });
+                        Span::styled(c.to_string(), style)
+                    });
 
-                        Line::from_iter(spans)
-                    }),
-            ))
+                    Line::from_iter(spans)
+                },
+            )))
             .block(Block::new().padding(Padding::new(1, 1, 1, 1))),
             body_panel,
         );
@@ -206,9 +221,9 @@ impl Application {
             ) as u16
                 + body_panel.x
                 + 1,
-            y: self.request_state.body_cursor.line as u16 + body_panel.y + 1,
+            y: self.request_state.body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
         };
-        
+
         frame.set_cursor_position(cursor_position);
     }
 }
