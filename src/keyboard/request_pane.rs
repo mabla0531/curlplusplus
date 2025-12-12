@@ -6,14 +6,6 @@ use crossterm::event::{KeyCode, KeyEvent};
 impl Application {
     pub fn handle_request_pane_input(&mut self, event: KeyEvent, request_tab: RequestTab) {
         match event.code {
-            KeyCode::Char('a') | KeyCode::Char('A') if !self.editing => {
-                self.editing = true;
-                let body_cursor = &mut self.request_state.body_cursor;
-                body_cursor.column = (body_cursor.column + 1).min(self.request_state.body.get(body_cursor.line).unwrap_or(&String::new()).len());
-            }
-            KeyCode::Char('i') | KeyCode::Char('I') if !self.editing => {
-                self.editing = true;
-            }
             KeyCode::Char(character) => match request_tab {
                 RequestTab::Headers if self.editing => {
                     if let RequestHeaderFocus::Header(header) = self.request_state.current_header
@@ -22,7 +14,7 @@ impl Application {
                         match self.request_state.current_header_section {
                             HeaderSection::Name => name.0.push(character),
                             HeaderSection::Value => name.1.push(character),
-                            HeaderSection::Delete => {}
+                            _ => {}
                         }
                     }
                 }
@@ -86,14 +78,14 @@ impl Application {
             },
             KeyCode::Enter => match request_tab {
                 RequestTab::Headers => match self.request_state.current_header {
-                    RequestHeaderFocus::Header(index) if self.request_state.current_header_section == HeaderSection::Delete => {
+                    RequestHeaderFocus::Header(index)
+                        if self.request_state.current_header_section == HeaderSection::Delete =>
+                    {
                         self.request_state.headers.remove(index);
                         if index >= self.request_state.headers.len() {
                             self.request_state.current_header =
                                 if !self.request_state.headers.is_empty() {
-                                    RequestHeaderFocus::Header(
-                                        self.request_state.headers.len() - 1,
-                                    )
+                                    RequestHeaderFocus::Header(self.request_state.headers.len() - 1)
                                 } else {
                                     RequestHeaderFocus::Add
                                 }
@@ -109,7 +101,7 @@ impl Application {
                 },
                 RequestTab::Body if !self.editing => {
                     self.editing = true;
-                },
+                }
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
                     let prev_line = self
