@@ -3,7 +3,7 @@ mod url_input;
 mod request_pane;
 mod response_pane;
 
-use crossterm::{execute, cursor::SetCursorStyle, event::{KeyCode, KeyEvent}};
+use crossterm::event::{KeyCode, KeyEvent};
 
 use crate::{Application, state::Panel};
 

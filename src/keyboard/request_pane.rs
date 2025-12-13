@@ -23,6 +23,12 @@ impl Application {
                     if let Some(line) = self.request_state.body.get_mut(body_cursor.line) {
                         line.insert(body_cursor.column.min(line.len()), character);
                         body_cursor.column = (body_cursor.column + 1).min(line.len());
+                        match character {
+                            '{' => line.insert(body_cursor.column.min(line.len()), '}'),
+                            '[' => line.insert(body_cursor.column.min(line.len()), ']'),
+                            '\"' => line.insert(body_cursor.column.min(line.len()), '\"'),
+                            _ => {}
+                        }
                     }
                 }
                 _ => {}
@@ -125,23 +131,37 @@ impl Application {
                         }
                     }
 
-                    let after_string = prev_line
-                        .get(body_cursor.column..)
-                        .unwrap_or_default()
-                        .to_string();
-
-                    let after_string = format!("{}{}", after_string_indent, after_string);
-
                     let body = &mut self.request_state.body;
 
                     if let Some(line) = body.get_mut(body_cursor.line) {
                         *line = before_string;
                     };
+                    let after_string = prev_line
+                        .get(body_cursor.column..)
+                        .unwrap_or_default()
+                        .to_string();
 
-                    body.insert(body_cursor.line + 1, after_string);
+                    if after_string.starts_with("]")
+                        || after_string.starts_with("}")
+                        || after_string.starts_with("\"")
+                    {
+                        let middle_string_indent = format!("{}    ", after_string_indent);
+                        let middle_string_indent_len = middle_string_indent.len();
+                        body.insert(body_cursor.line + 1, middle_string_indent);
+                        let after_string = format!("{}{}", after_string_indent, after_string);
 
-                    self.request_state.body_cursor.line += 1;
-                    self.request_state.body_cursor.column = after_string_indent.len();
+                        body.insert(body_cursor.line + 2, after_string);
+
+                        body_cursor.line += 1;
+                        body_cursor.column = middle_string_indent_len;
+                    } else {
+                        let after_string = format!("{}{}", after_string_indent, after_string);
+
+                        body.insert(body_cursor.line + 1, after_string);
+
+                        body_cursor.line += 1;
+                        body_cursor.column = after_string_indent.len();
+                    }
                 }
             },
             KeyCode::Up => match request_tab {
@@ -200,14 +220,28 @@ impl Application {
                 }
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
+
+                    // pre-clamp column to line so multiple key presses are not needed after coming from a position on a line greater than the length of the current line
+                    body_cursor.column = body_cursor.column.clamp(
+                        0,
+                        self.request_state
+                            .body
+                            .get(body_cursor.line)
+                            .unwrap_or(&String::new())
+                            .len(),
+                    );
+
                     if body_cursor.column < 1 && body_cursor.line > 0 {
                         body_cursor.line = body_cursor.line.saturating_sub(1);
-                        body_cursor.column = self
+
+                        let body_line = self
                             .request_state
                             .body
                             .get(body_cursor.line)
                             .unwrap_or(&String::new())
                             .len();
+
+                        body_cursor.column = body_line;
                     } else {
                         body_cursor.column = body_cursor.column.saturating_sub(1);
                     }
@@ -222,6 +256,17 @@ impl Application {
                 }
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
+
+                    // pre-clamp column to line so multiple key presses are not needed after coming from a position on a line greater than the length of the current line
+                    body_cursor.column = body_cursor.column.clamp(
+                        0,
+                        self.request_state
+                            .body
+                            .get(body_cursor.line)
+                            .unwrap_or(&String::new())
+                            .len(),
+                    );
+
                     let body_line = self
                         .request_state
                         .body
