@@ -184,6 +184,8 @@ impl Application {
         let end = (offset + viewable_line_count).min(self.request_state.body.len());
         let trimmed = &self.request_state.body[begin..end];
 
+        let mut in_quote_scope = false;
+
         frame.render_widget(
             Paragraph::new(Text::from_iter(trimmed.iter().enumerate().map(
                 |(line_idx, line)| {
@@ -193,6 +195,15 @@ impl Application {
                             && char_idx == error_column.saturating_sub(1)
                         {
                             Style::new().bg(palette::RED)
+                        } else if c == '{' || c == '}' {
+                            Style::new().fg(palette::PEACH)
+                        } else if c == '[' || c == ']' {
+                            Style::new().fg(palette::TEAL)
+                        } else if c == '"' {
+                            in_quote_scope = !in_quote_scope;
+                            Style::new().fg(palette::GREEN)
+                        } else if in_quote_scope {
+                            Style::new().fg(palette::GREEN)
                         } else {
                             Style::new()
                         };

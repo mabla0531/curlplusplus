@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 crossterm = "0.29.0"
+fern = "0.7.1"
+log = "0.4.29"
 openapi = "0.1.5"
 ratatui = "0.29.0"
 reqwest = "0.12.24"
