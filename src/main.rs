@@ -68,6 +68,10 @@ impl Application {
 }
 
 fn main() -> io::Result<()> {
+    fern::Dispatch::new()
+        .chain(fern::log_file("session.log").unwrap())
+        .apply().unwrap();
+
     enable_raw_mode()?;
 
     let mut stdout = io::stdout();

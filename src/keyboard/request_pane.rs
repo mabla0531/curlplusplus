@@ -118,7 +118,7 @@ impl Application {
                         .unwrap_or(String::new());
 
                     let before_string = prev_line
-                        .get(0..body_cursor.column)
+                        .get(0..body_cursor.column.min(prev_line.len()))
                         .unwrap_or_default()
                         .to_string();
 
@@ -156,7 +156,6 @@ impl Application {
                         body_cursor.column = middle_string_indent_len;
                     } else {
                         let after_string = format!("{}{}", after_string_indent, after_string);
-
                         body.insert(body_cursor.line + 1, after_string);
 
                         body_cursor.line += 1;
@@ -221,9 +220,7 @@ impl Application {
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
 
-                    // pre-clamp column to line so multiple key presses are not needed after coming from a position on a line greater than the length of the current line
-                    body_cursor.column = body_cursor.column.clamp(
-                        0,
+                    body_cursor.column = body_cursor.column.min(
                         self.request_state
                             .body
                             .get(body_cursor.line)
@@ -257,9 +254,7 @@ impl Application {
                 RequestTab::Body => {
                     let body_cursor = &mut self.request_state.body_cursor;
 
-                    // pre-clamp column to line so multiple key presses are not needed after coming from a position on a line greater than the length of the current line
-                    body_cursor.column = body_cursor.column.clamp(
-                        0,
+                    body_cursor.column = body_cursor.column.min(
                         self.request_state
                             .body
                             .get(body_cursor.line)
