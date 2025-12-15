@@ -114,7 +114,7 @@ impl Application {
                 (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
                     (palette::SUBTEXT1, palette::SURFACE1)
                 }
-                _ => (palette::SUBTEXT0, palette::SURFACE0),
+                _ => (palette::SUBTEXT0, palette::BASE),
             };
 
         let add_header_button =
@@ -265,11 +265,11 @@ fn header_line<'a>(
         format!("{}{}", name, name_padding),
         Some(palette::TEXT),
         if focused && section == HeaderSection::Name {
-            palette::SURFACE2
-        } else if focused {
             palette::SURFACE1
-        } else {
+        } else if focused {
             palette::SURFACE0
+        } else {
+            palette::BASE
         },
     );
 
@@ -279,11 +279,11 @@ fn header_line<'a>(
         format!("{}{}", value, value_padding),
         Some(palette::TEXT),
         if focused && section == HeaderSection::Value {
-            palette::SURFACE2
-        } else if focused {
             palette::SURFACE1
-        } else {
+        } else if focused {
             palette::SURFACE0
+        } else {
+            palette::BASE
         },
     );
 
@@ -295,11 +295,11 @@ fn header_line<'a>(
             Some(palette::MAROON)
         },
         if focused && section == HeaderSection::Delete {
-            palette::SURFACE2
-        } else if focused {
             palette::SURFACE1
-        } else {
+        } else if focused {
             palette::SURFACE0
+        } else {
+            palette::BASE
         },
     );
 
