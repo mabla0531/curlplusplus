@@ -15,6 +15,8 @@ use crate::{
     ui::{components::badge::badge, palette},
 };
 
+const HEADER_NAME_FIELD_WIDTH: usize = 28;
+
 impl Application {
     pub fn render_request_pane(&self, frame: &mut Frame, area: Rect) {
         let sub_area = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
@@ -43,13 +45,10 @@ impl Application {
         ]
         .concat();
 
-        if let Panel::Request(request_tab) = &self.focused_panel {
-            match request_tab {
-                RequestTab::Headers => self.render_request_headers_pane(frame, content_area),
-                RequestTab::Body => self.render_request_body_pane(frame, content_area),
-            }
-        } else {
-            self.render_request_headers_pane(frame, content_area);
+        match self.focused_panel {
+            Panel::Request(RequestTab::Headers) => self.render_request_headers_pane(frame, content_area),
+            Panel::Request(RequestTab::Body) => self.render_request_body_pane(frame, content_area),
+            _ => {}
         }
 
         let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
@@ -106,14 +105,12 @@ impl Application {
             })
             .collect::<Vec<_>>();
 
-        let list = Paragraph::new(Text::from_iter(header_elements))
+        let header_paragraph = Paragraph::new(Text::from_iter(header_elements))
             .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
 
         let (add_button_fg, add_button_bg) =
             match (&self.focused_panel, &self.request_state.current_header) {
-                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
-                    (palette::SUBTEXT1, palette::SURFACE1)
-                }
+                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => (palette::SUBTEXT1, palette::SURFACE1),
                 _ => (palette::SUBTEXT0, palette::BASE),
             };
 
@@ -128,7 +125,7 @@ impl Application {
 
         let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
 
-        frame.render_widget(list, headers_panel);
+        frame.render_widget(header_paragraph, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
         if self.request_state.headers.len() > viewable_header_count {
             frame.render_widget(
@@ -137,6 +134,23 @@ impl Application {
                     y: scroll_panel.y + scrollbar_position as u16,
                     ..scroll_panel
                 },
+            );
+        }
+
+        let cursor_horizontal_offset = if self.request_state.current_header_section == HeaderSection::Value {
+            HEADER_NAME_FIELD_WIDTH + 3 // I think this is caused by gap and padding
+        } else {
+            0
+        };
+
+        if self.editing && let RequestHeaderFocus::Header(current_header) = self.request_state.current_header {
+            frame.set_cursor_position(
+                Position::from((
+                    // 2 for padding
+                    headers_panel.x + 2 + (self.request_state.current_header_cursor + cursor_horizontal_offset) as u16, 
+                    // 1 for padding and *2 for spacing between each header
+                    headers_panel.y + ((current_header - offset) * 2) as u16 + 1
+                ))
             );
         }
     }
@@ -222,20 +236,22 @@ impl Application {
             status_panel,
         );
 
-        let cursor_position = Position {
-            x: (self.request_state.body_cursor.column).min(
-                self.request_state
-                    .body
-                    .get(self.request_state.body_cursor.line)
-                    .unwrap_or(&String::new())
-                    .len(),
-            ) as u16
+        if self.editing {
+            let cursor_position = Position {
+                x: (self.request_state.body_cursor.column).min(
+                    self.request_state
+                        .body
+                        .get(self.request_state.body_cursor.line)
+                        .unwrap_or(&String::new())
+                        .len(),
+                ) as u16
                 + body_panel.x
                 + 1,
-            y: self.request_state.body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
-        };
+                y: self.request_state.body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
+            };
 
-        frame.set_cursor_position(cursor_position);
+            frame.set_cursor_position(cursor_position);
+        }
     }
 }
 
@@ -247,13 +263,12 @@ fn header_line<'a>(
     area: Rect,
 ) -> [Line<'a>; 2] {
     let padding = 1_usize;
-    let name_field_width = 28_usize;
 
     // magic number guide: 2 is name field badge side characters, 1 is colon separator
     let value_field_width =
-        (area.width as usize).saturating_sub(padding * 2 + name_field_width + 2 + 1);
+        (area.width as usize).saturating_sub(padding * 2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
 
-    let name_padding_len = name_field_width.saturating_sub(name.len());
+    let name_padding_len = HEADER_NAME_FIELD_WIDTH.saturating_sub(name.len());
     let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
     let value_padding_len = value_field_width
         .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why!))

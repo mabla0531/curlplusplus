@@ -1,7 +1,3 @@
-// TODO Unfuckify this state struct, put it in the base app and
-// partition each panel's substate out cause this is gonna get
-// real VB.NETitive real quick
-
 use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,6 +9,7 @@ pub struct MethodState {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct UrlState {
     pub url_input: String,
+    pub url_cursor: usize,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -20,6 +17,7 @@ pub struct RequestState {
     pub headers: Vec<(String, String)>,
     pub current_header: RequestHeaderFocus,
     pub current_header_section: HeaderSection,
+    pub  current_header_cursor: usize,
     pub body: Vec<String>,
     pub body_cursor: BodyCursor,
     pub settings: (),

@@ -19,15 +19,19 @@ impl Application {
 
     pub fn handle_url_input(&mut self, event: KeyEvent) {
         match event.code {
-            KeyCode::Char(character) if self.editing => self.url_state.url_input.push(character),
-            KeyCode::Right | KeyCode::Tab => {
-                if self.editing {
-                    self.handle_url_autocomplete();
-                }
+            KeyCode::Char(character) if self.editing => {
+                self.url_state.url_input.push(character);
+                self.url_state.url_cursor = (self.url_state.url_cursor + 1).min(self.url_state.url_input.len());
+            },
+            KeyCode::Tab if self.editing => {
+                self.handle_url_autocomplete();
             }
+            KeyCode::Left if self.editing => self.url_state.url_cursor = self.url_state.url_cursor.saturating_sub(1),
+            KeyCode::Right if self.editing => self.url_state.url_cursor = (self.url_state.url_cursor + 1).min(self.url_state.url_input.len()),
             KeyCode::Enter => self.editing = !self.editing,
             KeyCode::Backspace if self.editing => {
                 self.url_state.url_input.pop();
+                self.url_state.url_cursor = self.url_state.url_cursor.saturating_sub(1);
             }
             _ => {}
         }

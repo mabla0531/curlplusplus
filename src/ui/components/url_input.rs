@@ -41,8 +41,8 @@ impl Application {
                 .border_style(border_style),
         );
 
-        if self.focused_panel == Panel::Url {
-            frame.set_cursor_position(Position::from((area.x + self.url_state.url_input.len() as u16 + 1, area.y + 1)));
+        if self.focused_panel == Panel::Url && self.editing {
+            frame.set_cursor_position(Position::from((area.x + self.url_state.url_cursor as u16 + 1, area.y + 1)));
         }
         frame.render_widget(url, area);
     }

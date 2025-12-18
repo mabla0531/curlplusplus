@@ -33,11 +33,13 @@ impl Application {
             },
             url_state: UrlState {
                 url_input: String::new(),
+                url_cursor: 0,
             },
             request_state: RequestState {
                 headers: Vec::new(),
                 current_header: RequestHeaderFocus::Add,
                 current_header_section: HeaderSection::Name,
+                current_header_cursor: 0,
                 body: vec![String::new()],
                 body_cursor: BodyCursor::default(),
                 settings: (),

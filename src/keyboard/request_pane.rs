@@ -12,10 +12,11 @@ impl Application {
                         && let Some(name) = self.request_state.headers.get_mut(header)
                     {
                         match self.request_state.current_header_section {
-                            HeaderSection::Name => name.0.push(character),
-                            HeaderSection::Value => name.1.push(character),
+                            HeaderSection::Name => name.0.insert(self.request_state.current_header_cursor, character),
+                            HeaderSection::Value => name.1.insert(self.request_state.current_header_cursor, character),
                             _ => {}
                         }
+                        self.request_state.current_header_cursor += 1;
                     }
                 }
                 RequestTab::Body if self.editing => {
@@ -35,20 +36,21 @@ impl Application {
             },
             KeyCode::Backspace if self.editing => match request_tab {
                 RequestTab::Headers => {
-                    if let RequestHeaderFocus::Header(header_index) =
-                        self.request_state.current_header
-                        && let Some((header_name, header_value)) =
-                            self.request_state.headers.get_mut(header_index)
+                    if let RequestHeaderFocus::Header(header_index) = self.request_state.current_header
+                        && let Some((header_name, header_value)) = self.request_state.headers.get_mut(header_index) 
+                        && self.request_state.current_header_cursor > 0
                     {
                         match self.request_state.current_header_section {
                             HeaderSection::Name => {
-                                header_name.pop();
+                                header_name.remove(self.request_state.current_header_cursor.saturating_sub(1));
                             }
                             HeaderSection::Value => {
-                                header_value.pop();
+                                header_value.remove(self.request_state.current_header_cursor.saturating_sub(1));
                             }
                             _ => {}
                         }
+
+                        self.request_state.current_header_cursor = self.request_state.current_header_cursor.saturating_sub(1);
                     }
                 }
                 RequestTab::Body => {
@@ -97,8 +99,19 @@ impl Application {
                                 }
                         }
                     }
-                    RequestHeaderFocus::Header(_) => {
+                    RequestHeaderFocus::Header(header) => {
                         self.editing = !self.editing;
+                        if self.editing {
+                            let (name, value) = self.request_state.headers.get(header).cloned().unwrap_or((String::new(), String::new()));
+                            
+                            let section_length = match self.request_state.current_header_section {
+                                HeaderSection::Name => name,
+                                HeaderSection::Value => value,
+                                _ => String::new()
+                            }.len();
+
+                            self.request_state.current_header_cursor = section_length;
+                        }
                     }
                     RequestHeaderFocus::Add => self
                         .request_state
@@ -143,7 +156,6 @@ impl Application {
 
                     if after_string.starts_with("]")
                         || after_string.starts_with("}")
-                        || after_string.starts_with("\"")
                     {
                         let middle_string_indent = format!("{}    ", after_string_indent);
                         let middle_string_indent_len = middle_string_indent.len();
@@ -165,31 +177,24 @@ impl Application {
             },
             KeyCode::Up => match request_tab {
                 RequestTab::Headers => {
-                    self.request_state.current_header = match self.request_state.current_header {
-                        RequestHeaderFocus::Header(header_num) => {
-                            RequestHeaderFocus::Header(header_num.saturating_sub(1))
-                        }
-                        RequestHeaderFocus::Add => {
-                            if !self.request_state.headers.is_empty() {
-                                RequestHeaderFocus::Header(
-                                    self.request_state.headers.len().saturating_sub(1),
-                                )
-                            } else {
-                                RequestHeaderFocus::Add
-                            }
-                        }
+                    if let RequestHeaderFocus::Header(header_num) = self.request_state.current_header && !self.editing {
+                        self.request_state.current_header = RequestHeaderFocus::Header(header_num.saturating_sub(1))
+                    } else if self.request_state.current_header == RequestHeaderFocus::Add && !self.request_state.headers.is_empty() {
+                        self.request_state.current_header = RequestHeaderFocus::Header(
+                            self.request_state.headers.len().saturating_sub(1)
+                        )
                     }
                 }
-                RequestTab::Body => {
+                RequestTab::Body if self.editing => {
                     let body_cursor = &mut self.request_state.body_cursor;
 
                     body_cursor.line = body_cursor.line.saturating_sub(1);
                 }
+                _ => {}
             },
             KeyCode::Down => match request_tab {
                 RequestTab::Headers => {
-                    if let RequestHeaderFocus::Header(header_num) =
-                        self.request_state.current_header
+                    if let RequestHeaderFocus::Header(header_num) = self.request_state.current_header && !self.editing
                     {
                         self.request_state.current_header =
                             if header_num >= self.request_state.headers.len() - 1 {
@@ -203,21 +208,24 @@ impl Application {
                             }
                     }
                 }
-                RequestTab::Body => {
+                RequestTab::Body if self.editing => {
                     let body_cursor = &mut self.request_state.body_cursor;
 
                     body_cursor.line =
                         (body_cursor.line + 1).min(self.request_state.body.len() - 1);
                 }
+                _ => {}
             },
             KeyCode::Left => match request_tab {
                 RequestTab::Headers if self.editing => {
-                    // TODO Move header cursor
+                    if let RequestHeaderFocus::Header(_) = self.request_state.current_header && self.request_state.current_header_section != HeaderSection::Delete {
+                         self.request_state.current_header_cursor = self.request_state.current_header_cursor.saturating_sub(1);
+                    }
                 }
                 RequestTab::Headers => {
                     self.request_state.current_header_section.decrement();
                 }
-                RequestTab::Body => {
+                RequestTab::Body if self.editing => {
                     let body_cursor = &mut self.request_state.body_cursor;
 
                     body_cursor.column = body_cursor.column.min(
@@ -243,15 +251,28 @@ impl Application {
                         body_cursor.column = body_cursor.column.saturating_sub(1);
                     }
                 }
+                _ => {}
             },
             KeyCode::Right => match request_tab {
                 RequestTab::Headers if self.editing => {
-                    // TODO Move header cursor
+                    match self.request_state.current_header {
+                        RequestHeaderFocus::Header(header) => {
+                            let (name, value) = self.request_state.headers.get(header).cloned().unwrap_or((String::new(), String::new()));
+                            let section_length = match self.request_state.current_header_section {
+                                HeaderSection::Name => name,
+                                HeaderSection::Value => value,
+                                HeaderSection::Delete => String::new()
+                            }.len();
+                            
+                            self.request_state.current_header_cursor = (self.request_state.current_header_cursor + 1).min(section_length);
+                        }
+                        RequestHeaderFocus::Add => {}
+                    }
                 }
                 RequestTab::Headers => {
                     self.request_state.current_header_section.increment();
                 }
-                RequestTab::Body => {
+                RequestTab::Body => if self.editing {
                     let body_cursor = &mut self.request_state.body_cursor;
 
                     body_cursor.column = body_cursor.column.min(
@@ -279,6 +300,7 @@ impl Application {
                         body_cursor.column = (body_cursor.column + 1).min(body_line.len());
                     }
                 }
+                _ => {}
             },
             KeyCode::Tab if request_tab == RequestTab::Body && self.editing => {
                 let body_cursor: &mut BodyCursor = &mut self.request_state.body_cursor;
