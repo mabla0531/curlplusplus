@@ -50,7 +50,10 @@ impl Application {
         }
     }
 
-    fn run<T: ratatui::backend::Backend + std::io::Write>(&mut self, terminal: &mut Terminal<T>) -> io::Result<()> {
+    fn run<T: ratatui::backend::Backend + std::io::Write>(
+        &mut self,
+        terminal: &mut Terminal<T>,
+    ) -> io::Result<()> {
         loop {
             terminal.draw(|frame| self.render(frame))?;
 
@@ -58,7 +61,14 @@ impl Application {
                 if let Event::Key(key) = event::read()? {
                     self.handle_input(key);
 
-                    execute!(terminal.backend_mut(), if self.editing { SetCursorStyle::BlinkingBar } else { SetCursorStyle::SteadyBlock })?;
+                    execute!(
+                        terminal.backend_mut(),
+                        if self.editing {
+                            SetCursorStyle::BlinkingBar
+                        } else {
+                            SetCursorStyle::SteadyBlock
+                        }
+                    )?;
                 }
             }
 
@@ -72,7 +82,8 @@ impl Application {
 fn main() -> io::Result<()> {
     fern::Dispatch::new()
         .chain(fern::log_file("session.log").unwrap())
-        .apply().unwrap();
+        .apply()
+        .unwrap();
 
     enable_raw_mode()?;
 

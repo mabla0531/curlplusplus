@@ -1,5 +1,5 @@
-use crate::state::ResponseTab;
 use crate::Application;
+use crate::state::ResponseTab;
 use crossterm::event::KeyEvent;
 
 impl Application {

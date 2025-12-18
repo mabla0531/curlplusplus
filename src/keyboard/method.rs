@@ -1,6 +1,6 @@
 use crossterm::event::{KeyCode, KeyEvent};
 
-use crate::{state::Method, Application};
+use crate::{Application, state::Method};
 
 impl Application {
     pub fn handle_method_input(&mut self, event: KeyEvent) {

@@ -8,7 +8,7 @@ use ratatui::{
     widgets::Block,
 };
 
-use crate::{state::Panel, Application};
+use crate::{Application, state::Panel};
 
 struct LayoutSet {
     pub app_name: Rect,
@@ -67,7 +67,8 @@ impl Application {
         self.render_response_pane(frame, layout.response_pane);
         self.render_help_bar(frame, layout.help_bar);
 
-        if self.editing && self.focused_panel == Panel::Method { // has to be after all others since it's a "z-index: 1;" element
+        if self.editing && self.focused_panel == Panel::Method {
+            // has to be after all others since it's a "z-index: 1;" element
             self.render_method_dropdown(frame, layout.method_dropdown);
         }
     }

@@ -1,11 +1,11 @@
-use crate::{state::Method, ui::palette, Application};
+use crate::{Application, state::Method, ui::palette};
 
 use ratatui::{
+    Frame,
     layout::Rect,
     style::Style,
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 impl Application {

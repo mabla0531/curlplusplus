@@ -1,11 +1,11 @@
-use crate::{ui::components::badge::badge, ui::palette, Application};
+use crate::{Application, ui::components::badge::badge, ui::palette};
 
 use ratatui::{
+    Frame,
     layout::{Alignment, Rect},
     style::Style,
     text::{Line, Span},
     widgets::Paragraph,
-    Frame,
 };
 
 impl Application {

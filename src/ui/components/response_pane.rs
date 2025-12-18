@@ -1,15 +1,15 @@
 use ratatui::{
+    Frame,
     layout::{Constraint, Layout, Margin, Rect},
     style::Style,
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Padding, Paragraph},
-    Frame,
 };
 
 use crate::{
+    Application,
     state::{Panel, ResponseTab},
     ui::{components::badge::badge, palette},
-    Application,
 };
 
 impl Application {

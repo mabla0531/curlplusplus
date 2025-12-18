@@ -12,8 +12,12 @@ impl Application {
                         && let Some(name) = self.request_state.headers.get_mut(header)
                     {
                         match self.request_state.current_header_section {
-                            HeaderSection::Name => name.0.insert(self.request_state.current_header_cursor, character),
-                            HeaderSection::Value => name.1.insert(self.request_state.current_header_cursor, character),
+                            HeaderSection::Name => name
+                                .0
+                                .insert(self.request_state.current_header_cursor, character),
+                            HeaderSection::Value => name
+                                .1
+                                .insert(self.request_state.current_header_cursor, character),
                             _ => {}
                         }
                         self.request_state.current_header_cursor += 1;
@@ -36,21 +40,28 @@ impl Application {
             },
             KeyCode::Backspace if self.editing => match request_tab {
                 RequestTab::Headers => {
-                    if let RequestHeaderFocus::Header(header_index) = self.request_state.current_header
-                        && let Some((header_name, header_value)) = self.request_state.headers.get_mut(header_index) 
+                    if let RequestHeaderFocus::Header(header_index) =
+                        self.request_state.current_header
+                        && let Some((header_name, header_value)) =
+                            self.request_state.headers.get_mut(header_index)
                         && self.request_state.current_header_cursor > 0
                     {
                         match self.request_state.current_header_section {
                             HeaderSection::Name => {
-                                header_name.remove(self.request_state.current_header_cursor.saturating_sub(1));
+                                header_name.remove(
+                                    self.request_state.current_header_cursor.saturating_sub(1),
+                                );
                             }
                             HeaderSection::Value => {
-                                header_value.remove(self.request_state.current_header_cursor.saturating_sub(1));
+                                header_value.remove(
+                                    self.request_state.current_header_cursor.saturating_sub(1),
+                                );
                             }
                             _ => {}
                         }
 
-                        self.request_state.current_header_cursor = self.request_state.current_header_cursor.saturating_sub(1);
+                        self.request_state.current_header_cursor =
+                            self.request_state.current_header_cursor.saturating_sub(1);
                     }
                 }
                 RequestTab::Body => {
@@ -102,13 +113,19 @@ impl Application {
                     RequestHeaderFocus::Header(header) => {
                         self.editing = !self.editing;
                         if self.editing {
-                            let (name, value) = self.request_state.headers.get(header).cloned().unwrap_or((String::new(), String::new()));
-                            
+                            let (name, value) = self
+                                .request_state
+                                .headers
+                                .get(header)
+                                .cloned()
+                                .unwrap_or((String::new(), String::new()));
+
                             let section_length = match self.request_state.current_header_section {
                                 HeaderSection::Name => name,
                                 HeaderSection::Value => value,
-                                _ => String::new()
-                            }.len();
+                                _ => String::new(),
+                            }
+                            .len();
 
                             self.request_state.current_header_cursor = section_length;
                         }
@@ -154,9 +171,7 @@ impl Application {
                         .unwrap_or_default()
                         .to_string();
 
-                    if after_string.starts_with("]")
-                        || after_string.starts_with("}")
-                    {
+                    if after_string.starts_with("]") || after_string.starts_with("}") {
                         let middle_string_indent = format!("{}    ", after_string_indent);
                         let middle_string_indent_len = middle_string_indent.len();
                         body.insert(body_cursor.line + 1, middle_string_indent);
@@ -177,11 +192,17 @@ impl Application {
             },
             KeyCode::Up => match request_tab {
                 RequestTab::Headers => {
-                    if let RequestHeaderFocus::Header(header_num) = self.request_state.current_header && !self.editing {
-                        self.request_state.current_header = RequestHeaderFocus::Header(header_num.saturating_sub(1))
-                    } else if self.request_state.current_header == RequestHeaderFocus::Add && !self.request_state.headers.is_empty() {
+                    if let RequestHeaderFocus::Header(header_num) =
+                        self.request_state.current_header
+                        && !self.editing
+                    {
+                        self.request_state.current_header =
+                            RequestHeaderFocus::Header(header_num.saturating_sub(1))
+                    } else if self.request_state.current_header == RequestHeaderFocus::Add
+                        && !self.request_state.headers.is_empty()
+                    {
                         self.request_state.current_header = RequestHeaderFocus::Header(
-                            self.request_state.headers.len().saturating_sub(1)
+                            self.request_state.headers.len().saturating_sub(1),
                         )
                     }
                 }
@@ -194,7 +215,9 @@ impl Application {
             },
             KeyCode::Down => match request_tab {
                 RequestTab::Headers => {
-                    if let RequestHeaderFocus::Header(header_num) = self.request_state.current_header && !self.editing
+                    if let RequestHeaderFocus::Header(header_num) =
+                        self.request_state.current_header
+                        && !self.editing
                     {
                         self.request_state.current_header =
                             if header_num >= self.request_state.headers.len() - 1 {
@@ -218,8 +241,11 @@ impl Application {
             },
             KeyCode::Left => match request_tab {
                 RequestTab::Headers if self.editing => {
-                    if let RequestHeaderFocus::Header(_) = self.request_state.current_header && self.request_state.current_header_section != HeaderSection::Delete {
-                         self.request_state.current_header_cursor = self.request_state.current_header_cursor.saturating_sub(1);
+                    if let RequestHeaderFocus::Header(_) = self.request_state.current_header
+                        && self.request_state.current_header_section != HeaderSection::Delete
+                    {
+                        self.request_state.current_header_cursor =
+                            self.request_state.current_header_cursor.saturating_sub(1);
                     }
                 }
                 RequestTab::Headers => {
@@ -254,50 +280,57 @@ impl Application {
                 _ => {}
             },
             KeyCode::Right => match request_tab {
-                RequestTab::Headers if self.editing => {
-                    match self.request_state.current_header {
-                        RequestHeaderFocus::Header(header) => {
-                            let (name, value) = self.request_state.headers.get(header).cloned().unwrap_or((String::new(), String::new()));
-                            let section_length = match self.request_state.current_header_section {
-                                HeaderSection::Name => name,
-                                HeaderSection::Value => value,
-                                HeaderSection::Delete => String::new()
-                            }.len();
-                            
-                            self.request_state.current_header_cursor = (self.request_state.current_header_cursor + 1).min(section_length);
+                RequestTab::Headers if self.editing => match self.request_state.current_header {
+                    RequestHeaderFocus::Header(header) => {
+                        let (name, value) = self
+                            .request_state
+                            .headers
+                            .get(header)
+                            .cloned()
+                            .unwrap_or((String::new(), String::new()));
+                        let section_length = match self.request_state.current_header_section {
+                            HeaderSection::Name => name,
+                            HeaderSection::Value => value,
+                            HeaderSection::Delete => String::new(),
                         }
-                        RequestHeaderFocus::Add => {}
+                        .len();
+
+                        self.request_state.current_header_cursor =
+                            (self.request_state.current_header_cursor + 1).min(section_length);
                     }
-                }
+                    RequestHeaderFocus::Add => {}
+                },
                 RequestTab::Headers => {
                     self.request_state.current_header_section.increment();
                 }
-                RequestTab::Body => if self.editing {
-                    let body_cursor = &mut self.request_state.body_cursor;
+                RequestTab::Body => {
+                    if self.editing {
+                        let body_cursor = &mut self.request_state.body_cursor;
 
-                    body_cursor.column = body_cursor.column.min(
-                        self.request_state
+                        body_cursor.column = body_cursor.column.min(
+                            self.request_state
+                                .body
+                                .get(body_cursor.line)
+                                .unwrap_or(&String::new())
+                                .len(),
+                        );
+
+                        let body_line = self
+                            .request_state
                             .body
                             .get(body_cursor.line)
-                            .unwrap_or(&String::new())
-                            .len(),
-                    );
+                            .cloned()
+                            .unwrap_or(String::new());
 
-                    let body_line = self
-                        .request_state
-                        .body
-                        .get(body_cursor.line)
-                        .cloned()
-                        .unwrap_or(String::new());
-
-                    if body_cursor.line < self.request_state.body.len().saturating_sub(1)
-                        && body_cursor.column >= body_line.len()
-                    {
-                        body_cursor.line = (body_cursor.line + 1)
-                            .min(self.request_state.body.len().saturating_sub(1));
-                        body_cursor.column = 0;
-                    } else {
-                        body_cursor.column = (body_cursor.column + 1).min(body_line.len());
+                        if body_cursor.line < self.request_state.body.len().saturating_sub(1)
+                            && body_cursor.column >= body_line.len()
+                        {
+                            body_cursor.line = (body_cursor.line + 1)
+                                .min(self.request_state.body.len().saturating_sub(1));
+                            body_cursor.column = 0;
+                        } else {
+                            body_cursor.column = (body_cursor.column + 1).min(body_line.len());
+                        }
                     }
                 }
                 _ => {}

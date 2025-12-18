@@ -46,7 +46,9 @@ impl Application {
         .concat();
 
         match self.focused_panel {
-            Panel::Request(RequestTab::Headers) => self.render_request_headers_pane(frame, content_area),
+            Panel::Request(RequestTab::Headers) => {
+                self.render_request_headers_pane(frame, content_area)
+            }
             Panel::Request(RequestTab::Body) => self.render_request_body_pane(frame, content_area),
             _ => {}
         }
@@ -110,7 +112,9 @@ impl Application {
 
         let (add_button_fg, add_button_bg) =
             match (&self.focused_panel, &self.request_state.current_header) {
-                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => (palette::SUBTEXT1, palette::SURFACE1),
+                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
+                    (palette::SUBTEXT1, palette::SURFACE1)
+                }
                 _ => (palette::SUBTEXT0, palette::BASE),
             };
 
@@ -137,21 +141,24 @@ impl Application {
             );
         }
 
-        let cursor_horizontal_offset = if self.request_state.current_header_section == HeaderSection::Value {
-            HEADER_NAME_FIELD_WIDTH + 3 // I think this is caused by gap and padding
-        } else {
-            0
-        };
+        let cursor_horizontal_offset =
+            if self.request_state.current_header_section == HeaderSection::Value {
+                HEADER_NAME_FIELD_WIDTH + 3 // I think this is caused by gap and padding
+            } else {
+                0
+            };
 
-        if self.editing && let RequestHeaderFocus::Header(current_header) = self.request_state.current_header {
-            frame.set_cursor_position(
-                Position::from((
-                    // 2 for padding
-                    headers_panel.x + 2 + (self.request_state.current_header_cursor + cursor_horizontal_offset) as u16, 
-                    // 1 for padding and *2 for spacing between each header
-                    headers_panel.y + ((current_header - offset) * 2) as u16 + 1
-                ))
-            );
+        if self.editing
+            && let RequestHeaderFocus::Header(current_header) = self.request_state.current_header
+        {
+            frame.set_cursor_position(Position::from((
+                // 2 for padding
+                headers_panel.x
+                    + 2
+                    + (self.request_state.current_header_cursor + cursor_horizontal_offset) as u16,
+                // 1 for padding and *2 for spacing between each header
+                headers_panel.y + ((current_header - offset) * 2) as u16 + 1,
+            )));
         }
     }
 
@@ -245,8 +252,8 @@ impl Application {
                         .unwrap_or(&String::new())
                         .len(),
                 ) as u16
-                + body_panel.x
-                + 1,
+                    + body_panel.x
+                    + 1,
                 y: self.request_state.body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
             };
 

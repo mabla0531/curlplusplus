@@ -1,13 +1,13 @@
 use ratatui::{
+    Frame,
     layout::Rect,
+    prelude::Position,
     style::Style,
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
-    Frame,
-    prelude::Position,
 };
 
-use crate::{state::Panel, ui::palette, Application};
+use crate::{Application, state::Panel, ui::palette};
 
 impl Application {
     pub fn render_url_input(&self, frame: &mut Frame, area: Rect) {
@@ -42,7 +42,10 @@ impl Application {
         );
 
         if self.focused_panel == Panel::Url && self.editing {
-            frame.set_cursor_position(Position::from((area.x + self.url_state.url_cursor as u16 + 1, area.y + 1)));
+            frame.set_cursor_position(Position::from((
+                area.x + self.url_state.url_cursor as u16 + 1,
+                area.y + 1,
+            )));
         }
         frame.render_widget(url, area);
     }

@@ -17,7 +17,7 @@ pub struct RequestState {
     pub headers: Vec<(String, String)>,
     pub current_header: RequestHeaderFocus,
     pub current_header_section: HeaderSection,
-    pub  current_header_cursor: usize,
+    pub current_header_cursor: usize,
     pub body: Vec<String>,
     pub body_cursor: BodyCursor,
     pub settings: (),
