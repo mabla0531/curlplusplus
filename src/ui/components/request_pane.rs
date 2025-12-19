@@ -165,8 +165,10 @@ impl Application {
     pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {
         let request_body_layout =
             Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).split(area);
-        let (body_panel, status_panel) = (request_body_layout[0], request_body_layout[1]);
-
+        let (body_panel_pre, status_panel) = (request_body_layout[0], request_body_layout[1]);
+        let body_panel_pre =
+            Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).split(body_panel_pre);
+        let (body_panel, scroll_panel) = (body_panel_pre[0], body_panel_pre[1]);
         let (status_text, error_position) = if !self.request_state.body.is_empty() {
             match serde_json::from_str::<Value>(&self.request_state.body.join("\n")) {
                 Ok(_) => (
@@ -242,6 +244,24 @@ impl Application {
             Paragraph::new(status_text).block(Block::new().padding(Padding::new(1, 1, 0, 0))),
             status_panel,
         );
+
+        let scrollbar_position = self.request_state.body_cursor.line as f64
+            / self.request_state.body.len().saturating_sub(1) as f64
+            * viewable_line_count as f64;
+
+        let scrollbar_position = (scrollbar_position as u16).min(viewable_line_count as u16);
+
+        let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
+
+        if self.request_state.body.len() > viewable_line_count as usize {
+            frame.render_widget(
+                scrollbar,
+                Rect {
+                    y: scroll_panel.y + scrollbar_position as u16,
+                    ..scroll_panel
+                },
+            );
+        }
 
         if self.editing {
             let cursor_position = Position {
