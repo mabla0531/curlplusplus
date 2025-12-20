@@ -120,3 +120,11 @@ registering event source with poller: token=Token(0), interests=READABLE
 registering event source with poller: token=Token(1), interests=READABLE
 registering event source with poller: token=Token(0), interests=READABLE
 registering event source with poller: token=Token(1), interests=READABLE
+registering event source with poller: token=Token(0), interests=READABLE
+registering event source with poller: token=Token(1), interests=READABLE
+registering event source with poller: token=Token(0), interests=READABLE
+registering event source with poller: token=Token(1), interests=READABLE
+registering event source with poller: token=Token(0), interests=READABLE
+registering event source with poller: token=Token(1), interests=READABLE
+registering event source with poller: token=Token(0), interests=READABLE
+registering event source with poller: token=Token(1), interests=READABLE

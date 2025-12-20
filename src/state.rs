@@ -13,14 +13,13 @@ pub struct UrlState {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct RequestState {
+pub struct MainState {
     pub headers: Vec<(String, String)>,
     pub current_header: RequestHeaderFocus,
     pub current_header_section: HeaderSection,
     pub current_header_cursor: usize,
-    pub body: Vec<String>,
-    pub body_cursor: BodyCursor,
-    pub settings: (),
+    pub request_body: Vec<String>,
+    pub request_body_cursor: BodyCursor,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -29,13 +28,12 @@ pub struct BodyCursor {
     pub column: usize,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ResponseState {}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RequestTab {
-    Headers,
-    Body,
+pub enum MainTab {
+    RequestHeaders,
+    RequestBody,
+    ResponseData,
+    ResponseBody
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -51,12 +49,6 @@ impl PartialEq<usize> for RequestHeaderFocus {
             RequestHeaderFocus::Add => false,
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ResponseTab {
-    Data,
-    Body,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -104,30 +96,29 @@ impl HeaderSection {
 pub enum Panel {
     Method,
     Url,
-    Request(RequestTab),
-    Response(ResponseTab),
+    Main(MainTab),
 }
 
 impl Panel {
     pub fn increment(&mut self) {
         *self = match self {
             Self::Method => Self::Url,
-            Self::Url => Self::Request(RequestTab::Headers),
-            Self::Request(RequestTab::Headers) => Self::Request(RequestTab::Body),
-            Self::Request(RequestTab::Body) => Self::Response(ResponseTab::Data),
-            Self::Response(ResponseTab::Data) => Self::Response(ResponseTab::Body),
-            Self::Response(ResponseTab::Body) => Self::Method,
+            Self::Url => Self::Main(MainTab::RequestHeaders),
+            Self::Main(MainTab::RequestHeaders) => Self::Main(MainTab::RequestBody),
+            Self::Main(MainTab::RequestBody) => Self::Main(MainTab::ResponseData),
+            Self::Main(MainTab::ResponseData) => Self::Main(MainTab::ResponseBody),
+            Self::Main(MainTab::ResponseBody) => Self::Method,
         }
     }
 
     pub fn decrement(&mut self) {
         *self = match self {
-            Self::Method => Self::Response(ResponseTab::Body),
+            Self::Method => Self::Main(MainTab::ResponseBody),
             Self::Url => Self::Method,
-            Self::Request(RequestTab::Headers) => Self::Url,
-            Self::Request(RequestTab::Body) => Self::Request(RequestTab::Headers),
-            Self::Response(ResponseTab::Data) => Self::Request(RequestTab::Body),
-            Self::Response(ResponseTab::Body) => Self::Response(ResponseTab::Data),
+            Self::Main(MainTab::RequestHeaders) => Self::Url,
+            Self::Main(MainTab::RequestBody) => Self::Main(MainTab::RequestHeaders),
+            Self::Main(MainTab::ResponseData) => Self::Main(MainTab::RequestBody),
+            Self::Main(MainTab::ResponseBody) => Self::Main(MainTab::ResponseData),
         }
     }
 }

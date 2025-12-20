@@ -1,6 +1,5 @@
 mod method;
-mod request_pane;
-mod response_pane;
+mod main_pane;
 mod url_input;
 
 use crossterm::event::{KeyCode, KeyEvent};
@@ -15,11 +14,8 @@ impl Application {
                     match self.focused_panel {
                         Panel::Method => self.handle_method_input(event),
                         Panel::Url => self.handle_url_input(event),
-                        Panel::Request(request_tab) => {
-                            self.handle_request_pane_input(event, request_tab)
-                        }
-                        Panel::Response(response_tab) => {
-                            self.handle_response_pane_input(event, response_tab)
+                        Panel::Main(main_tab) => {
+                            self.handle_main_pane_input(event, main_tab)
                         }
                     }
                 } else {
@@ -32,11 +28,8 @@ impl Application {
                     match self.focused_panel {
                         Panel::Method => self.handle_method_input(event),
                         Panel::Url => self.handle_url_input(event),
-                        Panel::Request(request_tab) => {
-                            self.handle_request_pane_input(event, request_tab)
-                        }
-                        Panel::Response(response_tab) => {
-                            self.handle_response_pane_input(event, response_tab)
+                        Panel::Main(main_tab) => {
+                            self.handle_main_pane_input(event, main_tab)
                         }
                     }
                 } else {
@@ -47,10 +40,7 @@ impl Application {
             KeyCode::Enter => match self.focused_panel {
                 Panel::Method => self.handle_method_input(event),
                 Panel::Url => self.handle_url_input(event),
-                Panel::Request(request_tab) => self.handle_request_pane_input(event, request_tab),
-                Panel::Response(response_tab) => {
-                    self.handle_response_pane_input(event, response_tab)
-                }
+                Panel::Main(main_tab) => self.handle_main_pane_input(event, main_tab),
             },
             KeyCode::Esc => {
                 if self.editing {
@@ -62,10 +52,7 @@ impl Application {
             _ => match self.focused_panel {
                 Panel::Method => self.handle_method_input(event),
                 Panel::Url => self.handle_url_input(event),
-                Panel::Request(request_tab) => self.handle_request_pane_input(event, request_tab),
-                Panel::Response(response_tab) => {
-                    self.handle_response_pane_input(event, response_tab)
-                }
+                Panel::Main(main_tab) => self.handle_main_pane_input(event, main_tab),
             },
         }
     }

@@ -11,45 +11,59 @@ use ratatui::{
 
 use crate::{
     Application,
-    state::{HeaderSection, Panel, RequestHeaderFocus, RequestTab},
+    state::{HeaderSection, Panel, RequestHeaderFocus, MainTab},
     ui::{components::badge::badge, palette},
 };
 
 const HEADER_NAME_FIELD_WIDTH: usize = 28;
 
 impl Application {
-    pub fn render_request_pane(&self, frame: &mut Frame, area: Rect) {
+    pub fn render_main_pane(&self, frame: &mut Frame, area: Rect) {
         let sub_area = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
             .split(area.inner(Margin::new(1, 1)));
 
         let (tabs_area, content_area) = (sub_area[0], sub_area[1]);
 
         let border_style = match self.focused_panel {
-            Panel::Request(_) => Style::new().fg(palette::SKY),
+            Panel::Main(_) => Style::new().fg(palette::SKY),
             _ => Style::new().fg(palette::TEXT),
         };
 
-        let (headers_tab_fg, headers_tab_bg) = match self.focused_panel {
-            Panel::Request(RequestTab::Headers) => (palette::SAPPHIRE, palette::SURFACE2),
+        let (request_headers_tab_fg, request_headers_tab_bg) = match self.focused_panel {
+            Panel::Main(MainTab::RequestHeaders) => (palette::SAPPHIRE, palette::SURFACE2),
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
-        let (body_tab_fg, body_tab_bg) = match self.focused_panel {
-            Panel::Request(RequestTab::Body) => (palette::SAPPHIRE, palette::SURFACE2),
+        let (request_body_tab_fg, request_body_tab_bg) = match self.focused_panel {
+            Panel::Main(MainTab::RequestBody) => (palette::SAPPHIRE, palette::SURFACE2),
+            _ => (palette::SUBTEXT0, palette::SURFACE0),
+        };
+
+        let (response_data_tab_fg, response_data_tab_bg) = match self.focused_panel {
+            Panel::Main(MainTab::ResponseData) => (palette::SAPPHIRE, palette::SURFACE2),
+            _ => (palette::SUBTEXT0, palette::SURFACE0),
+        };
+
+        let (response_body_tab_fg, response_body_tab_bg) = match self.focused_panel {
+            Panel::Main(MainTab::ResponseBody) => (palette::SAPPHIRE, palette::SURFACE2),
             _ => (palette::SUBTEXT0, palette::SURFACE0),
         };
 
         let tabs = [
-            badge("Headers", Some(headers_tab_fg), headers_tab_bg),
-            badge("Body", Some(body_tab_fg), body_tab_bg),
+            badge("Request Headers", Some(request_headers_tab_fg), request_headers_tab_bg),
+            badge("Request Body", Some(request_body_tab_fg), request_body_tab_bg),
+            badge("Response Data", Some(response_data_tab_fg), response_data_tab_bg),
+            badge("Response Body", Some(response_body_tab_fg), response_body_tab_bg),
         ]
         .concat();
 
         match self.focused_panel {
-            Panel::Request(RequestTab::Headers) => {
+            Panel::Main(MainTab::RequestHeaders) => {
                 self.render_request_headers_pane(frame, content_area)
             }
-            Panel::Request(RequestTab::Body) => self.render_request_body_pane(frame, content_area),
+            Panel::Main(MainTab::RequestBody) => self.render_request_body_pane(frame, content_area),
+            Panel::Main(MainTab::ResponseData) => {},
+            Panel::Main(MainTab::ResponseBody) => {},
             _ => {}
         }
 
@@ -73,24 +87,24 @@ impl Application {
         let (headers_panel, scroll_panel) = (header_layout[0], header_layout[1]);
         let viewable_header_count = (headers_panel.height as usize / 2).saturating_sub(1);
 
-        let index = match self.request_state.current_header {
+        let index = match self.main_state.current_header {
             RequestHeaderFocus::Header(index) => index,
-            RequestHeaderFocus::Add => self.request_state.headers.len().saturating_sub(1),
+            RequestHeaderFocus::Add => self.main_state.headers.len().saturating_sub(1),
         };
 
         let mut offset = index.saturating_sub(viewable_header_count / 2);
 
-        if offset + viewable_header_count > self.request_state.headers.len() {
+        if offset + viewable_header_count > self.main_state.headers.len() {
             offset = self
-                .request_state
+                .main_state
                 .headers
                 .len()
                 .saturating_sub(viewable_header_count);
         }
 
         let begin = offset;
-        let end = (offset + viewable_header_count).min(self.request_state.headers.len());
-        let trimmed = &self.request_state.headers[begin..end];
+        let end = (offset + viewable_header_count).min(self.main_state.headers.len());
+        let trimmed = &self.main_state.headers[begin..end];
 
         let header_elements = trimmed
             .iter()
@@ -100,8 +114,8 @@ impl Application {
                 header_line(
                     name,
                     value,
-                    self.request_state.current_header == index + offset,
-                    self.request_state.current_header_section.clone(),
+                    self.main_state.current_header == index + offset,
+                    self.main_state.current_header_section.clone(),
                     area,
                 )
             })
@@ -111,8 +125,8 @@ impl Application {
             .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
 
         let (add_button_fg, add_button_bg) =
-            match (&self.focused_panel, &self.request_state.current_header) {
-                (Panel::Request(RequestTab::Headers), RequestHeaderFocus::Add) => {
+            match (&self.focused_panel, &self.main_state.current_header) {
+                (Panel::Main(MainTab::RequestHeaders), RequestHeaderFocus::Add) => {
                     (palette::SUBTEXT1, palette::SURFACE1)
                 }
                 _ => (palette::SUBTEXT0, palette::BASE),
@@ -122,7 +136,7 @@ impl Application {
             Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
 
         let scrollbar_position = index as f64
-            / self.request_state.headers.len().saturating_sub(1) as f64
+            / self.main_state.headers.len().saturating_sub(1) as f64
             * headers_panel.height as f64;
 
         let scrollbar_position = (scrollbar_position as u32).min(headers_panel.height as u32);
@@ -131,7 +145,7 @@ impl Application {
 
         frame.render_widget(header_paragraph, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
-        if self.request_state.headers.len() > viewable_header_count {
+        if self.main_state.headers.len() > viewable_header_count {
             frame.render_widget(
                 scrollbar,
                 Rect {
@@ -142,20 +156,20 @@ impl Application {
         }
 
         let cursor_horizontal_offset =
-            if self.request_state.current_header_section == HeaderSection::Value {
+            if self.main_state.current_header_section == HeaderSection::Value {
                 HEADER_NAME_FIELD_WIDTH + 3 // I think this is caused by gap and padding
             } else {
                 0
             };
 
         if self.editing
-            && let RequestHeaderFocus::Header(current_header) = self.request_state.current_header
+            && let RequestHeaderFocus::Header(current_header) = self.main_state.current_header
         {
             frame.set_cursor_position(Position::from((
                 // 2 for padding
                 headers_panel.x
                     + 2
-                    + (self.request_state.current_header_cursor + cursor_horizontal_offset) as u16,
+                    + (self.main_state.current_header_cursor + cursor_horizontal_offset) as u16,
                 // 1 for padding and *2 for spacing between each header
                 headers_panel.y + ((current_header - offset) * 2) as u16 + 1,
             )));
@@ -169,8 +183,8 @@ impl Application {
         let body_panel_pre =
             Layout::horizontal([Constraint::Fill(1), Constraint::Length(1)]).split(body_panel_pre);
         let (body_panel, scroll_panel) = (body_panel_pre[0], body_panel_pre[1]);
-        let (status_text, error_position) = if !self.request_state.body.is_empty() {
-            match serde_json::from_str::<Value>(&self.request_state.body.join("\n")) {
+        let (status_text, error_position) = if !self.main_state.request_body.is_empty() {
+            match serde_json::from_str::<Value>(&self.main_state.request_body.join("\n")) {
                 Ok(_) => (
                     Span::styled("Valid".to_string(), Style::new().fg(palette::GREEN)),
                     None,
@@ -190,22 +204,22 @@ impl Application {
         let viewable_line_count = body_panel.height as usize - 2; // body panel has padding
 
         let mut offset = self
-            .request_state
-            .body_cursor
+            .main_state
+            .request_body_cursor
             .line
             .saturating_sub(viewable_line_count / 2);
 
-        if offset + viewable_line_count > self.request_state.body.len() {
+        if offset + viewable_line_count > self.main_state.request_body.len() {
             offset = self
-                .request_state
-                .body
+                .main_state
+                .request_body
                 .len()
                 .saturating_sub(viewable_line_count);
         }
 
         let begin = offset;
-        let end = (offset + viewable_line_count).min(self.request_state.body.len());
-        let trimmed = &self.request_state.body[begin..end];
+        let end = (offset + viewable_line_count).min(self.main_state.request_body.len());
+        let trimmed = &self.main_state.request_body[begin..end];
 
         let mut in_quote_scope = false;
 
@@ -245,15 +259,15 @@ impl Application {
             status_panel,
         );
 
-        let scrollbar_position = self.request_state.body_cursor.line as f64
-            / self.request_state.body.len().saturating_sub(1) as f64
+        let scrollbar_position = self.main_state.request_body_cursor.line as f64
+            / self.main_state.request_body.len().saturating_sub(1) as f64
             * viewable_line_count as f64;
 
         let scrollbar_position = (scrollbar_position as u16).min(viewable_line_count as u16);
 
         let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
 
-        if self.request_state.body.len() > viewable_line_count as usize {
+        if self.main_state.request_body.len() > viewable_line_count as usize {
             frame.render_widget(
                 scrollbar,
                 Rect {
@@ -265,16 +279,16 @@ impl Application {
 
         if self.editing {
             let cursor_position = Position {
-                x: (self.request_state.body_cursor.column).min(
-                    self.request_state
-                        .body
-                        .get(self.request_state.body_cursor.line)
+                x: (self.main_state.request_body_cursor.column).min(
+                    self.main_state
+                        .request_body
+                        .get(self.main_state.request_body_cursor.line)
                         .unwrap_or(&String::new())
                         .len(),
                 ) as u16
                     + body_panel.x
                     + 1,
-                y: self.request_state.body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
+                y: self.main_state.request_body_cursor.line as u16 + body_panel.y + 1 - offset as u16,
             };
 
             frame.set_cursor_position(cursor_position);

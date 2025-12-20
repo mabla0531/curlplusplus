@@ -17,8 +17,7 @@ pub struct Application {
     pub focused_panel: Panel,
     pub method_state: MethodState,
     pub url_state: UrlState,
-    pub request_state: RequestState,
-    pub response_state: ResponseState,
+    pub main_state: MainState,
     pub editing: bool,
     pub exit_request: bool,
 }
@@ -35,16 +34,14 @@ impl Application {
                 url_input: String::new(),
                 url_cursor: 0,
             },
-            request_state: RequestState {
+            main_state: MainState {
                 headers: Vec::new(),
                 current_header: RequestHeaderFocus::Add,
                 current_header_section: HeaderSection::Name,
                 current_header_cursor: 0,
-                body: vec![String::new()],
-                body_cursor: BodyCursor::default(),
-                settings: (),
+                request_body: vec![String::new()],
+                request_body_cursor: BodyCursor::default(),
             },
-            response_state: ResponseState {},
             editing: false,
             exit_request: false,
         }

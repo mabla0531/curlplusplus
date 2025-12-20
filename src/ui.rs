@@ -15,15 +15,13 @@ struct LayoutSet {
     pub method_selector: Rect,
     pub method_dropdown: Rect,
     pub url_input: Rect,
-    pub request_pane: Rect,
-    pub response_pane: Rect,
+    pub main_pane: Rect,
     pub help_bar: Rect,
 }
 
 fn layout(frame: &mut Frame) -> LayoutSet {
     let page_vertical = Layout::vertical([
         Constraint::Length(3),
-        Constraint::Fill(1),
         Constraint::Fill(1),
         Constraint::Length(1),
     ])
@@ -48,9 +46,8 @@ fn layout(frame: &mut Frame) -> LayoutSet {
         method_selector: top_bar[1],
         method_dropdown,
         url_input: top_bar[2],
-        request_pane: page_vertical[1],
-        response_pane: page_vertical[2],
-        help_bar: page_vertical[3],
+        main_pane: page_vertical[1],
+        help_bar: page_vertical[2],
     }
 }
 
@@ -63,8 +60,7 @@ impl Application {
         self.render_title(frame, layout.app_name);
         self.render_method(frame, layout.method_selector);
         self.render_url_input(frame, layout.url_input);
-        self.render_request_pane(frame, layout.request_pane);
-        self.render_response_pane(frame, layout.response_pane);
+        self.render_main_pane(frame, layout.main_pane);
         self.render_help_bar(frame, layout.help_bar);
 
         if self.editing && self.focused_panel == Panel::Method {
