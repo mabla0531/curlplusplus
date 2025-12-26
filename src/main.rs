@@ -2,6 +2,7 @@ mod keyboard;
 mod state;
 mod ui;
 
+use chrono::prelude::Utc;
 use crossterm::{
     cursor::SetCursorStyle,
     event::{self, Event},
@@ -77,8 +78,22 @@ impl Application {
 }
 
 fn main() -> io::Result<()> {
+    let log_folder = format!(
+        "{}/logs/",
+        std::env::var("$HOME").unwrap_or(".".to_string())
+    );
+
+    std::fs::create_dir_all(&log_folder)
+        .expect(format!("Could not create log folder in {}", log_folder).as_str());
+
     fern::Dispatch::new()
-        .chain(fern::log_file("session.log").unwrap())
+        .chain(
+            fern::log_file(format!(
+                "./logs/{}.log",
+                Utc::now().naive_utc().format("%Y%m%d_%H%M%S")
+            ))
+            .unwrap(),
+        )
         .apply()
         .unwrap();
 
