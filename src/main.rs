@@ -10,6 +10,7 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
+use ropey::Rope;
 use std::io::{self};
 
 use crate::state::*;
@@ -40,8 +41,11 @@ impl Application {
                 current_header: RequestHeaderFocus::Add,
                 current_header_section: HeaderSection::Name,
                 current_header_cursor: 0,
-                request_body: vec![String::new()],
-                request_body_cursor: BodyCursor::default(),
+                request_body: Rope::new(),
+                request_body_cursor: BodyCursor {
+                    position: 0,
+                    target_character: 0,
+                },
             },
             editing: false,
             exit_request: false,
@@ -84,7 +88,7 @@ fn main() -> io::Result<()> {
     );
 
     std::fs::create_dir_all(&log_folder)
-        .expect(format!("Could not create log folder in {}", log_folder).as_str());
+        .unwrap_or_else(|_| panic!("Could not create log folder in {}", log_folder));
 
     fern::Dispatch::new()
         .chain(

@@ -3,20 +3,17 @@ mod request_headers;
 mod response_body;
 mod response_data;
 
-use serde_json::Value;
-use std::iter;
-
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin, Position, Rect},
+    layout::{Constraint, Layout, Margin, Rect},
     style::Style,
-    text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Padding, Paragraph},
+    text::Line,
+    widgets::{Block, BorderType, Borders, Paragraph},
 };
 
 use crate::{
     Application,
-    state::{HeaderSection, MainTab, Panel, RequestHeaderFocus},
+    state::{MainTab, Panel},
     ui::{components::badge::badge, palette},
 };
 

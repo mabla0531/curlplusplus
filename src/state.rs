@@ -1,3 +1,4 @@
+use ropey::Rope;
 use std::fmt::Display;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -18,14 +19,28 @@ pub struct MainState {
     pub current_header: RequestHeaderFocus,
     pub current_header_section: HeaderSection,
     pub current_header_cursor: usize,
-    pub request_body: Vec<String>,
+    pub request_body: Rope,
     pub request_body_cursor: BodyCursor,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BodyCursor {
-    pub line: usize,
-    pub column: usize,
+    pub position: usize,
+    pub target_character: usize,
+}
+
+impl BodyCursor {
+    pub fn as_line(&self, rope: &Rope) -> usize {
+        rope.char_to_line(self.position)
+    }
+
+    pub fn as_line_start(&self, rope: &Rope) -> usize {
+        rope.line_to_char(rope.char_to_line(self.position))
+    }
+
+    pub fn as_char_in_line(&self, rope: &Rope) -> usize {
+        self.position - self.as_line_start(rope)
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -33,7 +48,7 @@ pub enum MainTab {
     RequestHeaders,
     RequestBody,
     ResponseData,
-    ResponseBody
+    ResponseBody,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

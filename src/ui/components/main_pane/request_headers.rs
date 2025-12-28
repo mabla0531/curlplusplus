@@ -1,12 +1,11 @@
-use serde_json::Value;
 use std::iter;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin, Position, Rect},
+    layout::{Constraint, Layout, Position, Rect},
     style::Style,
     text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Padding, Paragraph},
+    widgets::{Block, Padding, Paragraph},
 };
 
 use crate::{
