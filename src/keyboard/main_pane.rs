@@ -128,8 +128,30 @@ impl Application {
                     self.editing = true;
                 }
                 MainTab::RequestBody => {
+                    let mut indentation = mut_request_body
+                        .line(mut_request_body_cursor.as_line(mut_request_body))
+                        .chars()
+                        .take_while(|c| *c == ' ')
+                        .collect::<String>();
+
+                    if ['{', '['].contains(
+                        &mut_request_body.char(mut_request_body_cursor.position.saturating_sub(1)),
+                    ) && ['}', ']']
+                        .contains(&mut_request_body.char(mut_request_body_cursor.position))
+                    {
+                        mut_request_body.insert(
+                            mut_request_body_cursor.position,
+                            format!("\n{}", indentation).as_str(),
+                        );
+                        indentation.push_str("    ");
+                    }
+
                     mut_request_body.insert_char(mut_request_body_cursor.position, '\n');
                     mut_request_body_cursor.position += 1;
+
+                    mut_request_body.insert(mut_request_body_cursor.position, indentation.as_str());
+                    mut_request_body_cursor.position += indentation.len();
+
                     mut_request_body_cursor.target_character =
                         mut_request_body_cursor.as_char_in_line(mut_request_body);
                 }
