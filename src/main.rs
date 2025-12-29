@@ -5,7 +5,7 @@ mod ui;
 use chrono::prelude::Utc;
 use crossterm::{
     cursor::SetCursorStyle,
-    event::{self, Event},
+    event::{self, EnableBracketedPaste, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -62,7 +62,6 @@ impl Application {
             if event::poll(std::time::Duration::from_millis(100))? {
                 if let Event::Key(key) = event::read()? {
                     self.handle_input(key);
-
                     execute!(
                         terminal.backend_mut(),
                         if self.editing {
@@ -71,6 +70,8 @@ impl Application {
                             SetCursorStyle::SteadyBlock
                         }
                     )?;
+                } else if let Event::Paste(text) = event::read()? {
+                    self.handle_paste(text);
                 }
             }
 
@@ -105,6 +106,7 @@ fn main() -> io::Result<()> {
 
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen)?;
+    execute!(stdout, EnableBracketedPaste)?;
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;

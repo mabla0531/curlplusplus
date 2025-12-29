@@ -49,4 +49,6 @@ impl Application {
             _ => {}
         }
     }
+
+    pub fn handle_url_paste(&mut self, text: String) {}
 }
