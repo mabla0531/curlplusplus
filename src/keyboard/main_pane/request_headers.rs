@@ -151,6 +151,4 @@ impl Application {
             _ => {}
         }
     }
-
-    pub fn handle_request_headers_paste(&mut self, text: String) {}
 }

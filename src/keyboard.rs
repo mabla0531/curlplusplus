@@ -25,12 +25,4 @@ impl Application {
             },
         }
     }
-
-    pub fn handle_paste(&mut self, text: String) {
-        match self.focused_panel {
-            Panel::Method => self.handle_method_paste(text),
-            Panel::Url => self.handle_url_paste(text),
-            Panel::Main(main_tab) => self.handle_main_pane_paste(text, main_tab),
-        }
-    }
 }

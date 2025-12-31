@@ -70,8 +70,6 @@ impl Application {
                             SetCursorStyle::SteadyBlock
                         }
                     )?;
-                } else if let Event::Paste(text) = event::read()? {
-                    self.handle_paste(text);
                 }
             }
 

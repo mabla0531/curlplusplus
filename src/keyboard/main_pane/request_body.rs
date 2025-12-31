@@ -1,6 +1,6 @@
 use crate::Application;
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
 impl Application {
     pub fn handle_request_body_input(&mut self, event: KeyEvent) {
@@ -52,7 +52,7 @@ impl Application {
                 {
                     mut_request_body.insert(
                         mut_request_body_cursor.position,
-                        format!("\n{}", indentation).as_str(),
+                        &format!("\n{}", indentation),
                     );
                     indentation.push_str("    ");
                 }
@@ -60,7 +60,7 @@ impl Application {
                 mut_request_body.insert_char(mut_request_body_cursor.position, '\n');
                 mut_request_body_cursor.position += 1;
 
-                mut_request_body.insert(mut_request_body_cursor.position, indentation.as_str());
+                mut_request_body.insert(mut_request_body_cursor.position, &indentation);
                 mut_request_body_cursor.position += indentation.len();
 
                 mut_request_body_cursor.target_character =
@@ -135,15 +135,5 @@ impl Application {
             }
             _ => {}
         }
-    }
-
-    pub fn handle_request_body_paste(&mut self, text: String) {
-        let mut_request_body = &mut self.main_state.request_body;
-        let mut_request_body_cursor = &mut self.main_state.request_body_cursor;
-
-        mut_request_body.insert(mut_request_body_cursor.position, text.as_str());
-        //mut_request_body_cursor.position += text.len();
-        //mut_request_body_cursor.target_character =
-        //    mut_request_body_cursor.as_char_in_line(mut_request_body);
     }
 }

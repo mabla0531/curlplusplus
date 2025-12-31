@@ -17,13 +17,4 @@ impl Application {
             MainTab::ResponseBody => self.handle_response_body_input(event),
         }
     }
-
-    pub fn handle_main_pane_paste(&mut self, text: String, main_tab: MainTab) {
-        match main_tab {
-            MainTab::RequestHeaders => self.handle_request_headers_paste(text),
-            MainTab::RequestBody => self.handle_request_body_paste(text),
-            MainTab::ResponseData => self.handle_response_data_paste(text),
-            MainTab::ResponseBody => self.handle_response_body_paste(text),
-        }
-    }
 }

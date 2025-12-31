@@ -25,6 +25,4 @@ impl Application {
             _ => {}
         }
     }
-
-    pub fn handle_method_paste(&mut self, text: String) {}
 }
