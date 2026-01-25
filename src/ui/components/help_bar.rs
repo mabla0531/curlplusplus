@@ -1,4 +1,4 @@
-use crate::{Application, ui::components::badge::badge, ui::palette};
+use crate::Application;
 
 use ratatui::{
     Frame,
@@ -10,25 +10,36 @@ use ratatui::{
 
 impl Application {
     pub fn render_help_bar(&self, frame: &mut Frame, area: Rect) {
+        let keys = match self.settings.symbols {
+            true => ["󰌒", "󰘶", "󰌒", "󰌑", "󱊷", "ctrl", "󰌑"],
+            false => ["tab", "shift", "tab", "enter", "esc", "ctrl", "enter"],
+        };
+
         let help_spans = [
-            badge("󰌒", None, palette::SURFACE0),
-            vec![Span::styled("/", Style::new().fg(palette::TEXT))],
-            badge("󰘶", None, palette::SURFACE0),
-            badge("󰌒", None, palette::SURFACE0),
+            self.badge(keys[0], None, self.settings.theme.inactive_element),
+            vec![Span::styled("/", Style::new().fg(self.settings.theme.text))],
+            self.badge(keys[1], None, self.settings.theme.inactive_element),
+            self.badge(keys[2], None, self.settings.theme.inactive_element),
             vec![Span::styled(
                 "switch pane  ",
-                Style::new().fg(palette::TEXT),
+                Style::new().fg(self.settings.theme.text),
             )],
-            badge("󰌑", None, palette::SURFACE0),
+            self.badge(keys[3], None, self.settings.theme.inactive_element),
             vec![Span::styled(
                 "edit/confirm  ",
-                Style::new().fg(palette::TEXT),
+                Style::new().fg(self.settings.theme.text),
             )],
-            badge("󱊷", None, palette::SURFACE0),
-            vec![Span::styled("exit  ", Style::new().fg(palette::TEXT))],
-            badge("ctrl", None, palette::SURFACE0),
-            badge("󰌑", None, palette::SURFACE0),
-            vec![Span::styled("send  ", Style::new().fg(palette::TEXT))],
+            self.badge(keys[4], None, self.settings.theme.inactive_element),
+            vec![Span::styled(
+                "exit  ",
+                Style::new().fg(self.settings.theme.text),
+            )],
+            self.badge(keys[5], None, self.settings.theme.inactive_element),
+            self.badge(keys[6], None, self.settings.theme.inactive_element),
+            vec![Span::styled(
+                "send  ",
+                Style::new().fg(self.settings.theme.text),
+            )],
         ]
         .concat();
 

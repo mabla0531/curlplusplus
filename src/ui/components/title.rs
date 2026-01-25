@@ -1,20 +1,18 @@
 use ratatui::{
-    Frame,
     layout::Rect,
     style::{Style, Stylize},
-    text::{Line, Span, ToSpan},
+    text::{Line, Span},
     widgets::{Block, Padding, Paragraph},
+    Frame,
 };
 
 use crate::Application;
 
-use crate::ui::palette;
-
 impl Application {
     pub fn render_title(&self, frame: &mut Frame, area: Rect) {
         let title_spans = [
-            "curl".to_span(),
-            Span::styled("++", Style::default().fg(palette::PEACH).bold()),
+            Span::styled("curl", Style::default().fg(self.settings.theme.text)),
+            Span::styled("++", Style::default().fg(self.settings.theme.accent).bold()),
         ];
         let title = Paragraph::new(Line::from_iter(title_spans))
             .block(Block::new().padding(Padding::uniform(1)));

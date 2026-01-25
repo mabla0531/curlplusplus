@@ -1,94 +1,19 @@
 use std::iter;
 
 use ratatui::{
-    Frame,
     layout::{Constraint, Layout, Position, Rect},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, Padding, Paragraph},
+    Frame,
 };
 
 use crate::{
-    Application,
     state::{HeaderSection, MainTab, Panel, RequestHeaderFocus},
-    ui::{components::badge::badge, palette},
+    Application,
 };
 
 const HEADER_NAME_FIELD_WIDTH: usize = 28;
-
-fn header_line<'a>(
-    name: String,
-    value: String,
-    focused: bool,
-    section: HeaderSection,
-    area: Rect,
-) -> [Line<'a>; 2] {
-    let padding = 1_usize;
-
-    // magic number guide: 2 is name field badge side characters, 1 is colon separator
-    let value_field_width =
-        (area.width as usize).saturating_sub(padding * 2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
-
-    let name_padding_len = HEADER_NAME_FIELD_WIDTH.saturating_sub(name.len());
-    let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
-    let value_padding_len = value_field_width
-        .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why!))
-        .min(value_field_width);
-
-    let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
-
-    let name_badge = badge(
-        format!("{}{}", name, name_padding),
-        Some(palette::TEXT),
-        if focused && section == HeaderSection::Name {
-            palette::SURFACE1
-        } else if focused {
-            palette::SURFACE0
-        } else {
-            palette::BASE
-        },
-    );
-
-    let separator = vec![Span::styled(":", Style::new().fg(palette::TEXT))];
-
-    let value_badge = badge(
-        format!("{}{}", value, value_padding),
-        Some(palette::TEXT),
-        if focused && section == HeaderSection::Value {
-            palette::SURFACE1
-        } else if focused {
-            palette::SURFACE0
-        } else {
-            palette::BASE
-        },
-    );
-
-    let delete_badge = badge(
-        "",
-        if focused && section == HeaderSection::Delete {
-            Some(palette::RED)
-        } else {
-            Some(palette::MAROON)
-        },
-        if focused && section == HeaderSection::Delete {
-            palette::SURFACE1
-        } else if focused {
-            palette::SURFACE0
-        } else {
-            palette::BASE
-        },
-    );
-
-    [
-        Line::from_iter(
-            [name_badge, separator, value_badge, delete_badge]
-                .into_iter()
-                .flatten()
-                .collect::<Vec<_>>(),
-        ),
-        Line::from(""),
-    ]
-}
 
 impl Application {
     pub fn render_request_headers_pane(&self, frame: &mut Frame, area: Rect) {
@@ -123,7 +48,7 @@ impl Application {
             .cloned()
             .enumerate()
             .flat_map(|(index, (name, value))| {
-                header_line(
+                self.header_line(
                     name,
                     value,
                     self.main_state.current_header == index + offset,
@@ -138,14 +63,18 @@ impl Application {
 
         let (add_button_fg, add_button_bg) =
             match (&self.focused_panel, &self.main_state.current_header) {
-                (Panel::Main(MainTab::RequestHeaders), RequestHeaderFocus::Add) => {
-                    (palette::SUBTEXT1, palette::SURFACE1)
-                }
-                _ => (palette::SUBTEXT0, palette::BASE),
+                (Panel::Main(MainTab::RequestHeaders), RequestHeaderFocus::Add) => (
+                    self.settings.theme.active_text,
+                    self.settings.theme.active_element,
+                ),
+                _ => (
+                    self.settings.theme.inactive_text,
+                    self.settings.theme.inactive_element,
+                ),
             };
 
         let add_header_button =
-            Line::from_iter(badge("Add Header", Some(add_button_fg), add_button_bg));
+            Line::from_iter(self.badge("Add Header", Some(add_button_fg), add_button_bg));
 
         let scrollbar_position = index as f64
             / self.main_state.headers.len().saturating_sub(1) as f64
@@ -153,7 +82,8 @@ impl Application {
 
         let scrollbar_position = (scrollbar_position as u32).min(headers_panel.height as u32);
 
-        let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
+        let scrollbar =
+            Paragraph::new(Line::styled("█", Style::new().fg(self.settings.theme.text)));
 
         frame.render_widget(header_paragraph, headers_panel);
         frame.render_widget(add_header_button, add_button_panel);
@@ -186,5 +116,70 @@ impl Application {
                 headers_panel.y + ((current_header - offset) * 2) as u16 + 1,
             )));
         }
+    }
+
+    fn header_line<'a>(
+        &self,
+        name: String,
+        value: String,
+        focused: bool,
+        section: HeaderSection,
+        area: Rect,
+    ) -> [Line<'a>; 2] {
+        let padding = 1_usize;
+
+        // magic number guide: 2 is name field badge side characters, 1 is colon separator
+        let value_field_width =
+            (area.width as usize).saturating_sub(padding * 2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
+
+        let name_padding_len = HEADER_NAME_FIELD_WIDTH.saturating_sub(name.len());
+        let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
+        let value_padding_len = value_field_width
+            .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why!))
+            .min(value_field_width);
+
+        let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
+
+        let name_badge = self.badge(
+            format!("{}{}", name, name_padding),
+            Some(self.settings.theme.text),
+            if focused && section == HeaderSection::Name {
+                self.settings.theme.active_element
+            } else {
+                self.settings.theme.inactive_element
+            },
+        );
+
+        let separator = vec![Span::styled(":", Style::new().fg(self.settings.theme.text))];
+
+        let value_badge = self.badge(
+            format!("{}{}", value, value_padding),
+            Some(self.settings.theme.text),
+            if focused && section == HeaderSection::Value {
+                self.settings.theme.active_element
+            } else {
+                self.settings.theme.inactive_element
+            },
+        );
+
+        let delete_badge = self.badge(
+            "",
+            Some(self.settings.theme.red),
+            if focused && section == HeaderSection::Delete {
+                self.settings.theme.active_element
+            } else {
+                self.settings.theme.inactive_element
+            },
+        );
+
+        [
+            Line::from_iter(
+                [name_badge, separator, value_badge, delete_badge]
+                    .into_iter()
+                    .flatten()
+                    .collect::<Vec<_>>(),
+            ),
+            Line::from(""),
+        ]
     }
 }

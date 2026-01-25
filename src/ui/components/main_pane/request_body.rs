@@ -1,14 +1,14 @@
 use serde_json::Value;
 
 use ratatui::{
-    Frame,
     layout::{Constraint, Layout, Position, Rect},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, Padding, Paragraph},
+    Frame,
 };
 
-use crate::{Application, ui::palette};
+use crate::Application;
 
 impl Application {
     pub fn render_request_body_pane(&self, frame: &mut Frame, area: Rect) {
@@ -23,13 +23,16 @@ impl Application {
         let (status_text, error_position) = if ref_request_body.len_chars() > 0 {
             match serde_json::from_str::<Value>(&ref_request_body.to_string()) {
                 Ok(_) => (
-                    Span::styled("Valid".to_string(), Style::new().fg(palette::GREEN)),
+                    Span::styled(
+                        "Valid".to_string(),
+                        Style::new().fg(self.settings.theme.green),
+                    ),
                     None,
                 ),
                 Err(e) => (
                     Span::styled(
                         format!("Invalid - Line {} Column {}", e.line(), e.column()),
-                        Style::new().fg(palette::RED),
+                        Style::new().fg(self.settings.theme.red),
                     ),
                     Some((e.line(), e.column())),
                 ),
@@ -74,16 +77,18 @@ impl Application {
                             && line_idx + start == error_line.saturating_sub(1)
                             && char_idx == error_column.saturating_sub(1)
                         {
-                            Style::new().bg(palette::RED)
+                            Style::new()
+                                .fg(self.settings.theme.text_inverse)
+                                .bg(self.settings.theme.red)
                         } else if c == '{' || c == '}' {
-                            Style::new().fg(palette::PEACH)
+                            Style::new().fg(self.settings.theme.accent)
                         } else if c == '[' || c == ']' {
-                            Style::new().fg(palette::TEAL)
+                            Style::new().fg(self.settings.theme.active_element)
                         } else if c == '"' {
                             in_quote_scope = !in_quote_scope;
-                            Style::new().fg(palette::GREEN)
+                            Style::new().fg(self.settings.theme.green)
                         } else if in_quote_scope {
-                            Style::new().fg(palette::GREEN)
+                            Style::new().fg(self.settings.theme.green)
                         } else {
                             Style::new()
                         };
@@ -111,7 +116,8 @@ impl Application {
 
         let scrollbar_position = (scrollbar_position as u16).min(viewable_line_count as u16);
 
-        let scrollbar = Paragraph::new(Line::styled("█", Style::new().fg(palette::TEXT)));
+        let scrollbar =
+            Paragraph::new(Line::styled("█", Style::new().fg(self.settings.theme.text)));
 
         if ref_request_body.len_lines() > viewable_line_count {
             frame.render_widget(

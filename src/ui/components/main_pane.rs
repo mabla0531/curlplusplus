@@ -5,7 +5,7 @@ mod response_data;
 
 use ratatui::{
     Frame,
-    layout::{Constraint, Layout, Margin, Rect},
+    layout::{Alignment, Constraint, Layout, Margin, Rect},
     style::Style,
     text::Line,
     widgets::{Block, BorderType, Borders, Paragraph},
@@ -14,7 +14,6 @@ use ratatui::{
 use crate::{
     Application,
     state::{MainTab, Panel},
-    ui::{components::badge::badge, palette},
 };
 
 impl Application {
@@ -23,49 +22,81 @@ impl Application {
             .split(area.inner(Margin::new(1, 1)));
 
         let (tabs_area, content_area) = (sub_area[0], sub_area[1]);
+        let tabs_area =
+            Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                .split(tabs_area);
+        let (request_tabs_area, response_tabs_area) = (tabs_area[0], tabs_area[1]);
 
         let border_style = match self.focused_panel {
-            Panel::Main(_) => Style::new().fg(palette::SKY),
-            _ => Style::new().fg(palette::TEXT),
+            Panel::Main(_) => Style::new().fg(self.settings.theme.active),
+            _ => Style::new().fg(self.settings.theme.text),
         };
 
         let (request_headers_tab_fg, request_headers_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::RequestHeaders) => (palette::SAPPHIRE, palette::SURFACE2),
-            _ => (palette::SUBTEXT0, palette::SURFACE0),
+            Panel::Main(MainTab::RequestHeaders) => (
+                self.settings.theme.active_text,
+                self.settings.theme.active_element,
+            ),
+            _ => (
+                self.settings.theme.inactive_text,
+                self.settings.theme.inactive_element,
+            ),
         };
 
         let (request_body_tab_fg, request_body_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::RequestBody) => (palette::SAPPHIRE, palette::SURFACE2),
-            _ => (palette::SUBTEXT0, palette::SURFACE0),
+            Panel::Main(MainTab::RequestBody) => (
+                self.settings.theme.active_text,
+                self.settings.theme.active_element,
+            ),
+            _ => (
+                self.settings.theme.inactive_text,
+                self.settings.theme.inactive_element,
+            ),
         };
 
         let (response_data_tab_fg, response_data_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::ResponseData) => (palette::SAPPHIRE, palette::SURFACE2),
-            _ => (palette::SUBTEXT0, palette::SURFACE0),
+            Panel::Main(MainTab::ResponseData) => (
+                self.settings.theme.active_text,
+                self.settings.theme.active_element,
+            ),
+            _ => (
+                self.settings.theme.inactive_text,
+                self.settings.theme.inactive_element,
+            ),
         };
 
         let (response_body_tab_fg, response_body_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::ResponseBody) => (palette::SAPPHIRE, palette::SURFACE2),
-            _ => (palette::SUBTEXT0, palette::SURFACE0),
+            Panel::Main(MainTab::ResponseBody) => (
+                self.settings.theme.active_text,
+                self.settings.theme.active_element,
+            ),
+            _ => (
+                self.settings.theme.inactive_text,
+                self.settings.theme.inactive_element,
+            ),
         };
 
-        let tabs = [
-            badge(
+        let request_tabs = [
+            self.badge(
                 "Request Headers",
                 Some(request_headers_tab_fg),
                 request_headers_tab_bg,
             ),
-            badge(
+            self.badge(
                 "Request Body",
                 Some(request_body_tab_fg),
                 request_body_tab_bg,
             ),
-            badge(
+        ]
+        .concat();
+
+        let response_tabs = [
+            self.badge(
                 "Response Data",
                 Some(response_data_tab_fg),
                 response_data_tab_bg,
             ),
-            badge(
+            self.badge(
                 "Response Body",
                 Some(response_body_tab_fg),
                 response_body_tab_bg,
@@ -83,7 +114,9 @@ impl Application {
             _ => {}
         }
 
-        let tabs_paragraph = Paragraph::new(Line::from_iter(tabs));
+        let request_tabs_paragraph = Paragraph::new(Line::from_iter(request_tabs));
+        let response_tabs_paragraph =
+            Paragraph::new(Line::from_iter(response_tabs)).alignment(Alignment::Right);
 
         frame.render_widget(
             Block::new()
@@ -92,6 +125,7 @@ impl Application {
                 .border_style(border_style),
             area,
         );
-        frame.render_widget(tabs_paragraph, tabs_area);
+        frame.render_widget(request_tabs_paragraph, request_tabs_area);
+        frame.render_widget(response_tabs_paragraph, response_tabs_area);
     }
 }

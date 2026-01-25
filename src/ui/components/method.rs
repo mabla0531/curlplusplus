@@ -11,37 +11,35 @@ use std::iter;
 use crate::{
     Application,
     state::{Method, Panel},
-    ui::components::badge::badge,
-    ui::palette,
 };
 
 impl Application {
     pub fn render_method(&self, frame: &mut Frame, area: Rect) {
         let border_style = match self.focused_panel {
-            Panel::Method => Style::new().fg(palette::SKY),
-            _ => Style::new().fg(palette::TEXT),
+            Panel::Method => Style::new().fg(self.settings.theme.active),
+            _ => Style::new().fg(self.settings.theme.text),
         };
 
         let method_str = self.method_state.current_method.to_string();
         let method_dropdown_str = format!(
-            " {}{} ",
+            " {}{}",
             method_str,
-            iter::repeat_n(' ', 7 - method_str.len()).collect::<String>()
+            iter::repeat_n(' ', 9 - method_str.len()).collect::<String>()
         );
 
-        let method = Paragraph::new(Line::from_iter(badge(
+        let method = Paragraph::new(Line::from_iter(self.badge(
             method_dropdown_str,
-            Some(palette::CRUST),
+            Some(self.settings.theme.base),
             match self.method_state.current_method {
-                Method::Get => palette::GET_COLOR,
-                Method::Post => palette::POST_COLOR,
-                Method::Put => palette::PUT_COLOR,
-                Method::Patch => palette::PATCH_COLOR,
-                Method::Options => palette::OPTIONS_COLOR,
-                Method::Connect => palette::CONNECT_COLOR,
-                Method::Trace => palette::TRACE_COLOR,
-                Method::Delete => palette::DELETE_COLOR,
-                Method::Head => palette::HEAD_COLOR,
+                Method::Get => self.settings.theme.get_color,
+                Method::Post => self.settings.theme.post_color,
+                Method::Put => self.settings.theme.put_color,
+                Method::Patch => self.settings.theme.patch_color,
+                Method::Options => self.settings.theme.options_color,
+                Method::Connect => self.settings.theme.connect_color,
+                Method::Trace => self.settings.theme.trace_color,
+                Method::Delete => self.settings.theme.delete_color,
+                Method::Head => self.settings.theme.head_color,
             },
         )))
         .block(

@@ -1,4 +1,5 @@
 mod keyboard;
+mod settings;
 mod state;
 mod ui;
 
@@ -13,9 +14,10 @@ use ratatui::{Terminal, backend::CrosstermBackend};
 use ropey::Rope;
 use std::io::{self};
 
-use crate::state::*;
+use crate::{settings::Settings, state::*};
 
 pub struct Application {
+    pub settings: Settings,
     pub focused_panel: Panel,
     pub method_state: MethodState,
     pub url_state: UrlState,
@@ -27,6 +29,8 @@ pub struct Application {
 impl Application {
     fn new() -> Self {
         Self {
+            settings: Settings::load_from_config(),
+
             focused_panel: Panel::Method,
             method_state: MethodState {
                 current_method: Method::Get,

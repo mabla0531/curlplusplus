@@ -1,6 +1,6 @@
 use crate::Application;
 
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crossterm::event::{KeyCode, KeyEvent};
 
 impl Application {
     pub fn handle_request_body_input(&mut self, event: KeyEvent) {
@@ -9,6 +9,18 @@ impl Application {
 
         match event.code {
             KeyCode::Char(character) if self.editing => {
+                let next_char = mut_request_body.get_char(mut_request_body_cursor.position);
+
+                if (character == '}' && next_char == Some('}'))
+                    || (character == ']' && next_char == Some(']'))
+                    || (character == '\"' && next_char == Some('\"'))
+                {
+                    mut_request_body_cursor.position += 1;
+                    mut_request_body_cursor.target_character =
+                        mut_request_body_cursor.as_char_in_line(mut_request_body);
+                    return; // punch out early if the next character is a closer and a close character is pressed
+                }
+
                 mut_request_body.insert_char(mut_request_body_cursor.position, character);
                 mut_request_body_cursor.position += 1;
                 mut_request_body_cursor.target_character =
@@ -45,10 +57,11 @@ impl Application {
                     .take_while(|c| *c == ' ')
                     .collect::<String>();
 
-                if ['{', '['].contains(
-                    &mut_request_body.char(mut_request_body_cursor.position.saturating_sub(1)),
-                ) && ['}', ']']
-                    .contains(&mut_request_body.char(mut_request_body_cursor.position))
+                let before_char =
+                    mut_request_body.get_char(mut_request_body_cursor.position.saturating_sub(1));
+                let after_char = mut_request_body.get_char(mut_request_body_cursor.position);
+                if (before_char == Some('{') && after_char == Some('}'))
+                    || (before_char == Some('[') && after_char == Some(']'))
                 {
                     mut_request_body.insert(
                         mut_request_body_cursor.position,
