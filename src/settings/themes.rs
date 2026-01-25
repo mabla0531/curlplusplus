@@ -1,6 +1,6 @@
 use ratatui::style::Color;
 use serde::{Deserialize, Serialize};
-use std::fs::DirEntry;
+use std::fs::{DirEntry, ReadDir};
 use std::{collections::HashMap, sync::LazyLock};
 
 /// Colors are formatted as "#ffffff"
@@ -105,15 +105,32 @@ fn load_theme_from_file(file: DirEntry) -> Option<(String, Theme)> {
 }
 
 fn load_themes_from_files() -> Vec<(String, Theme)> {
-    let Ok(theme_files) = std::fs::read_dir("/etc/curlpp/themes/") else {
-        return vec![];
+    let root_themes = if let Ok(theme_files) = std::fs::read_dir("/etc/curlpp/themes/") {
+        theme_files
+            .into_iter()
+            .filter_map(Result::ok)
+            .filter_map(load_theme_from_file)
+            .collect::<Vec<_>>()
+    } else {
+        vec![]
     };
 
-    theme_files
-        .into_iter()
-        .filter_map(Result::ok)
-        .filter_map(load_theme_from_file)
-        .collect::<Vec<_>>()
+    let user_themes = match dirs::home_dir().and_then(|h| h.to_str().map(str::to_string)) {
+        Some(home_dir) => {
+            if let Ok(theme_files) = std::fs::read_dir(format!("{}/curlpp/themes", home_dir)) {
+                theme_files
+                    .into_iter()
+                    .filter_map(Result::ok)
+                    .filter_map(load_theme_from_file)
+                    .collect::<Vec<_>>()
+            } else {
+                vec![]
+            }
+        }
+        None => vec![],
+    };
+
+    [root_themes, user_themes].concat()
 }
 
 fn load_themes() -> Vec<(String, Theme)> {
