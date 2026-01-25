@@ -96,8 +96,8 @@ pub static THEMES: LazyLock<HashMap<String, Theme>> =
 fn load_theme_from_file(file: DirEntry) -> Option<(String, Theme)> {
     let contents = std::fs::read_to_string(file.path()).ok()?;
 
-    let theme_name = file.file_name();
-    let theme_name = theme_name.to_str();
+    let theme_name = file.path();
+    let theme_name = theme_name.file_stem()?.to_str();
 
     let theme = toml::from_str::<ThemeFile>(&contents).ok();
 
