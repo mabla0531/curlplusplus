@@ -6,7 +6,7 @@ use ratatui::{
     widgets::Paragraph,
 };
 
-use crate::{Application, ResponseType, WrappedResponse, errors::SendRequestError};
+use crate::{Application, ResponseType, client::WrappedResponse, errors::SendRequestError};
 
 impl Application {
     pub fn render_response_status_pane(&mut self, frame: &mut Frame, area: Rect) {
