@@ -1,10 +1,8 @@
 mod request_body;
 mod request_headers;
-mod response_body;
-mod response_data;
+mod response_status;
 
-use crate::Application;
-use crate::MainTab;
+use crate::{Application, state::MainTab};
 
 use crossterm::event::KeyEvent;
 
@@ -13,8 +11,7 @@ impl Application {
         match main_tab {
             MainTab::RequestHeaders => self.handle_request_headers_input(event),
             MainTab::RequestBody => self.handle_request_body_input(event),
-            MainTab::ResponseData => self.handle_response_data_input(event),
-            MainTab::ResponseBody => self.handle_response_body_input(event),
+            MainTab::ResponseStatus => self.handle_response_status_input(event),
         }
     }
 }

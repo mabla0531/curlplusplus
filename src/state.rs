@@ -47,8 +47,7 @@ impl BodyCursor {
 pub enum MainTab {
     RequestHeaders,
     RequestBody,
-    ResponseData,
-    ResponseBody,
+    ResponseStatus,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -120,20 +119,18 @@ impl Panel {
             Self::Method => Self::Url,
             Self::Url => Self::Main(MainTab::RequestHeaders),
             Self::Main(MainTab::RequestHeaders) => Self::Main(MainTab::RequestBody),
-            Self::Main(MainTab::RequestBody) => Self::Main(MainTab::ResponseData),
-            Self::Main(MainTab::ResponseData) => Self::Main(MainTab::ResponseBody),
-            Self::Main(MainTab::ResponseBody) => Self::Method,
+            Self::Main(MainTab::RequestBody) => Self::Main(MainTab::ResponseStatus),
+            Self::Main(MainTab::ResponseStatus) => Self::Method,
         }
     }
 
     pub fn decrement(&mut self) {
         *self = match self {
-            Self::Method => Self::Main(MainTab::ResponseBody),
+            Self::Method => Self::Main(MainTab::ResponseStatus),
             Self::Url => Self::Method,
             Self::Main(MainTab::RequestHeaders) => Self::Url,
             Self::Main(MainTab::RequestBody) => Self::Main(MainTab::RequestHeaders),
-            Self::Main(MainTab::ResponseData) => Self::Main(MainTab::RequestBody),
-            Self::Main(MainTab::ResponseBody) => Self::Main(MainTab::ResponseData),
+            Self::Main(MainTab::ResponseStatus) => Self::Main(MainTab::RequestBody),
         }
     }
 }
@@ -149,6 +146,22 @@ pub enum Method {
     Trace,
     Delete,
     Head,
+}
+
+impl From<Method> for reqwest::Method {
+    fn from(val: Method) -> reqwest::Method {
+        match val {
+            Method::Get => reqwest::Method::GET,
+            Method::Post => reqwest::Method::POST,
+            Method::Put => reqwest::Method::PUT,
+            Method::Patch => reqwest::Method::PATCH,
+            Method::Options => reqwest::Method::OPTIONS,
+            Method::Connect => reqwest::Method::CONNECT,
+            Method::Trace => reqwest::Method::TRACE,
+            Method::Delete => reqwest::Method::DELETE,
+            Method::Head => reqwest::Method::HEAD,
+        }
+    }
 }
 
 impl Method {

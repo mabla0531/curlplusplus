@@ -1,13 +1,14 @@
-mod components;
+pub mod animations;
+pub mod components;
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Layout, Rect},
     style::Stylize,
     widgets::Block,
-    Frame,
 };
 
-use crate::{state::Panel, Application};
+use crate::{Application, state::Panel};
 
 struct LayoutSet {
     pub app_name: Rect,
@@ -51,7 +52,7 @@ fn layout(frame: &mut Frame) -> LayoutSet {
 }
 
 impl Application {
-    pub fn render(&self, frame: &mut Frame) {
+    pub fn render(&mut self, frame: &mut Frame) {
         let layout = layout(frame);
 
         frame.render_widget(Block::new().bg(self.settings.theme.base), frame.area());

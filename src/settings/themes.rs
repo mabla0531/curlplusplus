@@ -101,7 +101,7 @@ fn load_theme_from_file(file: DirEntry) -> Option<(String, Theme)> {
 
     let theme = toml::from_str::<ThemeFile>(&contents).ok();
 
-    Some(theme_name?.to_string()).zip(Some(theme.map(Into::into))?)
+    Some(theme_name?.to_string()).zip(theme.map(Into::into))
 }
 
 fn load_themes_from_files() -> Vec<(String, Theme)> {
@@ -135,12 +135,16 @@ fn load_themes_from_files() -> Vec<(String, Theme)> {
 
 fn load_themes() -> Vec<(String, Theme)> {
     let custom_themes = load_themes_from_files();
-    let builtin_themes = vec![(DEFAULT_THEME.to_string(), CATPPUCCIN_MACCHIATO)];
+    let builtin_themes = vec![
+        (DEFAULT_THEME.to_string(), CATPPUCCIN_MACCHIATO),
+        ("dracula".to_string(), DRACULA),
+    ];
 
     [builtin_themes, custom_themes].concat()
 }
 
-pub const DEFAULT_THEME: &str = "catppuccin-macchiato";
+pub const DEFAULT_THEME: &str = "dracula";
+
 pub const CATPPUCCIN_MACCHIATO: Theme = Theme {
     accent: Color::Rgb(245, 169, 127),
     green: Color::Rgb(166, 218, 149),
@@ -163,4 +167,28 @@ pub const CATPPUCCIN_MACCHIATO: Theme = Theme {
     trace_color: Color::Rgb(238, 153, 160),
     delete_color: Color::Rgb(237, 135, 150),
     head_color: Color::Rgb(166, 218, 149),
+};
+
+pub const DRACULA: Theme = Theme {
+    accent: Color::Rgb(98, 114, 164),
+    green: Color::Rgb(80, 250, 123),
+    red: Color::Rgb(255, 85, 85),
+    active: Color::Rgb(98, 114, 164),
+    inactive: Color::Rgb(68, 71, 90),
+    text: Color::Rgb(248, 248, 242),
+    text_inverse: Color::Rgb(40, 42, 54),
+    active_text: Color::Rgb(248, 248, 242),
+    inactive_text: Color::Rgb(248, 248, 242),
+    active_element: Color::Rgb(98, 114, 164),
+    inactive_element: Color::Rgb(68, 71, 90),
+    base: Color::Rgb(40, 42, 54),
+    get_color: Color::Rgb(139, 233, 253),
+    post_color: Color::Rgb(189, 147, 249),
+    put_color: Color::Rgb(255, 184, 108),
+    patch_color: Color::Rgb(241, 250, 140),
+    options_color: Color::Rgb(255, 121, 198),
+    connect_color: Color::Rgb(80, 250, 123),
+    trace_color: Color::Rgb(98, 114, 164),
+    delete_color: Color::Rgb(255, 85, 85),
+    head_color: Color::Rgb(248, 248, 242),
 };

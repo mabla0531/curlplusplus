@@ -1,7 +1,6 @@
 mod request_body;
 mod request_headers;
-mod response_body;
-mod response_data;
+mod response_status;
 
 use ratatui::{
     Frame,
@@ -17,7 +16,7 @@ use crate::{
 };
 
 impl Application {
-    pub fn render_main_pane(&self, frame: &mut Frame, area: Rect) {
+    pub fn render_main_pane(&mut self, frame: &mut Frame, area: Rect) {
         let sub_area = Layout::vertical([Constraint::Length(1), Constraint::Fill(1)])
             .split(area.inner(Margin::new(1, 1)));
 
@@ -54,8 +53,8 @@ impl Application {
             ),
         };
 
-        let (response_data_tab_fg, response_data_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::ResponseData) => (
+        let (response_status_tab_fg, response_status_tab_bg) = match self.focused_panel {
+            Panel::Main(MainTab::ResponseStatus) => (
                 self.settings.theme.active_text,
                 self.settings.theme.active_element,
             ),
@@ -66,7 +65,7 @@ impl Application {
         };
 
         let (response_body_tab_fg, response_body_tab_bg) = match self.focused_panel {
-            Panel::Main(MainTab::ResponseBody) => (
+            Panel::Main(MainTab::ResponseStatus) => (
                 self.settings.theme.active_text,
                 self.settings.theme.active_element,
             ),
@@ -90,18 +89,11 @@ impl Application {
         ]
         .concat();
 
-        let response_tabs = [
-            self.badge(
-                "Response Data",
-                Some(response_data_tab_fg),
-                response_data_tab_bg,
-            ),
-            self.badge(
-                "Response Body",
-                Some(response_body_tab_fg),
-                response_body_tab_bg,
-            ),
-        ]
+        let response_tabs = [self.badge(
+            "Response Status",
+            Some(response_status_tab_fg),
+            response_status_tab_bg,
+        )]
         .concat();
 
         match self.focused_panel {
@@ -109,8 +101,9 @@ impl Application {
                 self.render_request_headers_pane(frame, content_area)
             }
             Panel::Main(MainTab::RequestBody) => self.render_request_body_pane(frame, content_area),
-            Panel::Main(MainTab::ResponseData) => {}
-            Panel::Main(MainTab::ResponseBody) => {}
+            Panel::Main(MainTab::ResponseStatus) => {
+                self.render_response_status_pane(frame, content_area);
+            }
             _ => {}
         }
 
