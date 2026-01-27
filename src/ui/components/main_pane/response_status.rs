@@ -65,7 +65,7 @@ impl Application {
         let body_icon = response.body_status.icon();
 
         let paragraph = Paragraph::new(format!(
-            "URL: {}\n\nStatus Code: {}\n\nHeaders: {}\n\nBody{}:\n\n{}",
+            "URL: {}\n\nStatus Code: {}\n\nHeaders: \n{}\n\nBody{}:\n\n{}",
             response.meta.url,
             response.meta.status,
             response
@@ -73,8 +73,8 @@ impl Application {
                 .headers
                 .iter()
                 .map(|(name, value)| format!(
-                    "\t{} : {}",
-                    name,
+                    "    {} : {}",
+                    name.as_str(),
                     value.to_str().unwrap_or("invalid")
                 ))
                 .collect::<Vec<String>>()
