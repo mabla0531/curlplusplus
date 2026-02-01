@@ -1,9 +1,10 @@
 use crate::{Application, state::Method};
 
 use futures_util::StreamExt;
+use log::error;
 use reqwest::{
     Client, Response, StatusCode, Url,
-    header::{HeaderMap, HeaderName, HeaderValue},
+    header::{CONTENT_TYPE, HeaderMap, HeaderName, HeaderValue},
 };
 use ropey::Rope;
 use unicode_bom::Bom;
@@ -18,7 +19,7 @@ pub enum ResponseType {
 }
 
 impl ResponseType {
-    pub fn append_body(&mut self, chunk: String) -> bool {
+    pub fn try_append_body(&mut self, chunk: String) -> bool {
         if let Self::FinishedSuccess(response) = self {
             response.append_body(chunk);
             true
@@ -58,10 +59,12 @@ impl WrappedResponse {
     }
 }
 
+#[derive(Clone, Debug)]
 pub struct WrappedResponseMeta {
     pub url: Url,
     pub status: StatusCode,
-    pub headers: HeaderMap,
+    pub content_type: Option<String>,
+    pub headers: Vec<String>,
 }
 
 pub enum BodyStatus {
@@ -88,17 +91,38 @@ impl Application {
 
         let response_mtx = self.last_response.clone();
 
+        // reset scroll since any previous response
+        // will be cleared
+        self.main_state.response_status_scroll = 0;
+
         tokio::spawn(async move {
             *response_mtx.lock().unwrap() = ResponseType::Pending;
             let result = send_request_async(client, method, url, headers, body).await;
 
             match result {
                 Ok(response) => {
+                    let content_type = response.headers().get(CONTENT_TYPE);
+                    let content_type = content_type.and_then(|ct| ct.to_str().ok());
+
+                    let headers = response
+                        .headers()
+                        .clone()
+                        .iter()
+                        .map(|(name, value)| {
+                            format!(
+                                "    {} : {}",
+                                name.as_str().replace("\n", " "),
+                                value.to_str().unwrap_or("invalid").replace("\n", " ")
+                            )
+                        })
+                        .collect::<Vec<String>>();
+
                     let wrapped = WrappedResponse {
                         meta: WrappedResponseMeta {
                             url: response.url().clone(),
                             status: response.status(),
-                            headers: response.headers().clone(),
+                            content_type: content_type.map(|ct| ct.to_string()),
+                            headers,
                         },
                         body: "".to_string(),
                         body_status: BodyStatus::Streaming,
@@ -106,21 +130,60 @@ impl Application {
 
                     *response_mtx.lock().unwrap() = ResponseType::FinishedSuccess(wrapped);
 
-                    let mut body_stream = response.bytes_stream();
-
-                    while let Some(chunk) = body_stream.next().await {
-                        if let Ok(chunk) = chunk {
-                            let chunk_str = decode_with_unicode_bom(chunk.iter().as_slice());
-                            response_mtx.lock().unwrap().append_body(chunk_str);
-                        } else {
-                            break; // napoleon meme
+                    // surely json won't be sent over an SSE stream right?
+                    if let Some("application/json") = content_type {
+                        match response.text().await {
+                            Ok(raw) => match serde_json::from_str::<serde_json::Value>(&raw) {
+                                Ok(desered) => match serde_json::to_string_pretty(&desered) {
+                                    Ok(round_tripped) => {
+                                        response_mtx.lock().unwrap().try_append_body(round_tripped);
+                                    }
+                                    Err(e) => {
+                                        response_mtx.lock().unwrap().try_append_body(format!(
+                                            "--- Malformed JSON ---\n{}",
+                                            raw
+                                        ));
+                                        error!("Error re-serializing json response: {}", e);
+                                    }
+                                },
+                                Err(e) => {
+                                    response_mtx.lock().unwrap().try_append_body(format!(
+                                        "--- Malformed JSON ---\n{}",
+                                        raw
+                                    ));
+                                    error!("Error deserializing json response: {}", e);
+                                }
+                            },
+                            Err(e) => {
+                                response_mtx
+                                    .lock()
+                                    .unwrap()
+                                    .try_append_body("Failed to receive response body".to_string());
+                                error!("Error receiving response body: {}", e);
+                            }
                         }
-                    }
 
-                    response_mtx
-                        .lock()
-                        .unwrap()
-                        .set_body_status(BodyStatus::Finished);
+                        response_mtx
+                            .lock()
+                            .unwrap()
+                            .set_body_status(BodyStatus::Finished);
+                    } else {
+                        let mut body_stream = response.bytes_stream();
+
+                        while let Some(chunk) = body_stream.next().await {
+                            if let Ok(chunk) = chunk {
+                                let chunk_str = decode_with_unicode_bom(chunk.iter().as_slice());
+                                response_mtx.lock().unwrap().try_append_body(chunk_str);
+                            } else {
+                                break; // napoleon meme
+                            }
+                        }
+
+                        response_mtx
+                            .lock()
+                            .unwrap()
+                            .set_body_status(BodyStatus::Finished);
+                    }
                 }
                 Err(e) => {
                     *response_mtx.lock().unwrap() = ResponseType::FinishedError(e);

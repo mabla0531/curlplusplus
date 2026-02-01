@@ -21,6 +21,7 @@ pub struct MainState {
     pub current_header_cursor: usize,
     pub request_body: Rope,
     pub request_body_cursor: BodyCursor,
+    pub response_status_scroll: usize,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

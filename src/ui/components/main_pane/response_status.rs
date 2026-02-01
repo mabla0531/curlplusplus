@@ -2,11 +2,14 @@ use ratatui::{
     Frame,
     layout::{Alignment, Constraint, Layout, Rect},
     style::Style,
-    text::{Span, Text},
-    widgets::Paragraph,
+    text::{Line, Span, Text},
+    widgets::{Block, Padding, Paragraph, Wrap},
 };
 
-use crate::{Application, ResponseType, client::WrappedResponse, errors::SendRequestError};
+use crate::{
+    Application, ResponseType, client::WrappedResponse, errors::SendRequestError,
+    ui::response_status_height,
+};
 
 impl Application {
     pub fn render_response_status_pane(&mut self, frame: &mut Frame, area: Rect) {
@@ -64,24 +67,71 @@ impl Application {
     ) {
         let body_icon = response.body_status.icon();
 
-        let paragraph = Paragraph::new(format!(
-            "URL: {}\n\nStatus Code: {}\n\nHeaders: \n{}\n\nBody{}:\n\n{}",
-            response.meta.url,
-            response.meta.status,
+        let url_code_line = vec![
+            Line::from_iter([
+                Span::from(format!("URL: {}", response.meta.url)),
+                Span::from(format!("Status Code: {}", response.meta.status)),
+            ]),
+            Line::from(""),
+        ];
+
+        let headers_lines = [
+            vec![Line::from("Headers:")],
             response
                 .meta
                 .headers
                 .iter()
-                .map(|(name, value)| format!(
-                    "    {} : {}",
-                    name.as_str(),
-                    value.to_str().unwrap_or("invalid")
-                ))
-                .collect::<Vec<String>>()
-                .join("\n"),
-            body_icon,
-            response.body
-        ));
+                .cloned()
+                .flat_map(|header| {
+                    let header = if header.len() > self.terminal_width.saturating_sub(4) as usize {
+                        format!(
+                            "{}...",
+                            &header[0..(self.terminal_width.saturating_sub(4) as usize)
+                                .min(header.len())]
+                                .to_string()
+                        )
+                    } else {
+                        header
+                    };
+                    [Line::from(Span::from(header)), Line::from("")]
+                })
+                .collect::<Vec<_>>(),
+        ]
+        .concat();
+
+        let body_lines = [
+            vec![Line::from(format!("Body{}:", body_icon))],
+            response
+                .body
+                .lines()
+                .flat_map(|line| {
+                    line.chars()
+                        .collect::<Vec<_>>()
+                        .chunks(self.terminal_width.saturating_sub(4) as usize)
+                        .map(|chunk| Line::from(chunk.iter().collect::<String>()))
+                        .collect::<Vec<_>>()
+                })
+                .collect(),
+        ]
+        .concat();
+
+        let response_lines = [url_code_line, headers_lines, body_lines].concat();
+        let safe_pane_height = (self.main_state.response_status_scroll
+            + self.response_status_pane_height() as usize)
+            .min(response_status_height(self.terminal_width, response))
+            .min(response_lines.len()); // hard bail
+
+        let viewable_response_lines =
+            response_lines.get(self.main_state.response_status_scroll..safe_pane_height);
+
+        let viewable_response_lines = viewable_response_lines
+            .map(Into::into)
+            .unwrap_or(response_lines);
+
+        let response_text = Text::from_iter(viewable_response_lines);
+        let paragraph = Paragraph::new(response_text)
+            .block(Block::default().padding(Padding::uniform(1)))
+            .wrap(Wrap { trim: true });
 
         frame.render_widget(paragraph, area);
     }

@@ -44,6 +44,9 @@ pub struct Application {
     pub last_response: Arc<Mutex<ResponseType>>,
 
     pub animation_state: AnimationState,
+
+    pub terminal_width: u16,
+    pub terminal_height: u16,
 }
 
 impl Application {
@@ -70,6 +73,7 @@ impl Application {
                     position: 0,
                     target_character: 0,
                 },
+                response_status_scroll: 0,
             },
             editing: false,
             exit_request: false,
@@ -79,6 +83,13 @@ impl Application {
             last_response: Arc::new(Mutex::new(ResponseType::None)),
 
             animation_state: Default::default(),
+
+            terminal_width: crossterm::terminal::size()
+                .expect("Cannot get initial terminal size")
+                .0,
+            terminal_height: crossterm::terminal::size()
+                .expect("Cannot get initial terminal size")
+                .1,
         }
     }
 
@@ -90,16 +101,23 @@ impl Application {
             terminal.draw(|frame| self.render(frame))?;
 
             if event::poll(std::time::Duration::from_millis(100))? {
-                if let Event::Key(key) = event::read()? {
-                    self.handle_input(key);
-                    execute!(
-                        terminal.backend_mut(),
-                        if self.editing {
-                            SetCursorStyle::BlinkingBar
-                        } else {
-                            SetCursorStyle::SteadyBlock
-                        }
-                    )?;
+                match event::read()? {
+                    Event::Key(key) => {
+                        self.handle_input(key);
+                        execute!(
+                            terminal.backend_mut(),
+                            if self.editing {
+                                SetCursorStyle::BlinkingBar
+                            } else {
+                                SetCursorStyle::SteadyBlock
+                            }
+                        )?;
+                    }
+                    Event::Resize(width, height) => {
+                        self.terminal_width = width;
+                        self.terminal_height = height;
+                    }
+                    _ => {}
                 }
             }
 

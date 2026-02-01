@@ -1,6 +1,6 @@
 use ratatui::style::Color;
 use serde::{Deserialize, Serialize};
-use std::fs::{DirEntry, ReadDir};
+use std::fs::DirEntry;
 use std::{collections::HashMap, sync::LazyLock};
 
 /// Colors are formatted as "#ffffff"
