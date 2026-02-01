@@ -5,6 +5,7 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Padding, Paragraph, Wrap},
 };
+use reqwest::StatusCode;
 
 use crate::{
     Application, ResponseType, client::WrappedResponse, errors::SendRequestError,
@@ -67,10 +68,28 @@ impl Application {
     ) {
         let body_icon = response.body_status.icon();
 
+        let status_color = match response.meta.status.as_u16() {
+            100..200 => self.settings.theme.active,
+            200..300 => self.settings.theme.green,
+            300..400 => self.settings.theme.accent,
+            400..500 => self.settings.theme.red,
+            500..600 => self.settings.theme.red,
+            _ => self.settings.theme.active,
+        };
+
         let url_code_line = vec![
             Line::from_iter([
-                Span::from(format!("URL: {}", response.meta.url)),
-                Span::from(format!("Status Code: {}", response.meta.status)),
+                Span::styled(
+                    format!("URL: {}", response.meta.url),
+                    Style::default().bg(self.settings.theme.inactive_element),
+                ),
+                Span::from(" "),
+                Span::styled(
+                    format!("Status Code: {}", response.meta.status),
+                    Style::default()
+                        .fg(self.settings.theme.text_inverse)
+                        .bg(status_color),
+                ),
             ]),
             Line::from(""),
         ];
@@ -105,11 +124,15 @@ impl Application {
                 .body
                 .lines()
                 .flat_map(|line| {
-                    line.chars()
-                        .collect::<Vec<_>>()
-                        .chunks(self.terminal_width.saturating_sub(4) as usize)
-                        .map(|chunk| Line::from(chunk.iter().collect::<String>()))
-                        .collect::<Vec<_>>()
+                    if line.is_empty() {
+                        vec![Line::from("")]
+                    } else {
+                        line.chars()
+                            .collect::<Vec<_>>()
+                            .chunks(self.terminal_width.saturating_sub(4) as usize)
+                            .map(|chunk| Line::from(chunk.iter().collect::<String>()))
+                            .collect::<Vec<_>>()
+                    }
                 })
                 .collect(),
         ]
