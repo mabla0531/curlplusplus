@@ -219,7 +219,7 @@ async fn send_request_async(
         header_map.insert(name, value);
     }
 
-    let mut request = client.request(method.into(), url);
+    let mut request = client.request(method.into(), url).headers(header_map);
 
     let body = body.to_string();
     if !body.trim().is_empty() {
