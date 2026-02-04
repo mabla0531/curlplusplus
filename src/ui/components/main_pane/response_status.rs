@@ -5,7 +5,6 @@ use ratatui::{
     text::{Line, Span, Text},
     widgets::{Block, Padding, Paragraph, Wrap},
 };
-use reqwest::StatusCode;
 
 use crate::{
     Application, ResponseType, client::WrappedResponse, errors::SendRequestError,
@@ -77,20 +76,20 @@ impl Application {
             _ => self.settings.theme.active,
         };
 
+        let url = self.badge(
+            format!("URL: {}", response.meta.url),
+            None,
+            self.settings.theme.base,
+        );
+
+        let code = self.badge(
+            format!("Status Code: {}", response.meta.status),
+            Some(self.settings.theme.text_inverse),
+            status_color,
+        );
+
         let url_code_line = vec![
-            Line::from_iter([
-                Span::styled(
-                    format!("URL: {}", response.meta.url),
-                    Style::default().bg(self.settings.theme.inactive_element),
-                ),
-                Span::from(" "),
-                Span::styled(
-                    format!("Status Code: {}", response.meta.status),
-                    Style::default()
-                        .fg(self.settings.theme.text_inverse)
-                        .bg(status_color),
-                ),
-            ]),
+            Line::from_iter([url, vec![Span::from(" ")], code].concat()),
             Line::from(""),
         ];
 
@@ -101,20 +100,20 @@ impl Application {
                 .headers
                 .iter()
                 .cloned()
-                .flat_map(|header| {
+                .map(|header| {
                     let header = if header.len() > self.terminal_width.saturating_sub(4) as usize {
                         format!(
                             "{}...",
-                            &header[0..(self.terminal_width.saturating_sub(4) as usize)
-                                .min(header.len())]
+                            &header[0..(self.terminal_width.saturating_sub(4) as usize)]
                                 .to_string()
                         )
                     } else {
                         header
                     };
-                    [Line::from(Span::from(header)), Line::from("")]
+                    Line::from(Span::from(header))
                 })
                 .collect::<Vec<_>>(),
+            vec![Line::from("")],
         ]
         .concat();
 
