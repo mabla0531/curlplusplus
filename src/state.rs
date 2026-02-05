@@ -24,6 +24,36 @@ pub struct MainState {
     pub response_status_scroll: usize,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MainMenuState {
+    pub selection: MainMenuSelection,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum MainMenuSelection {
+    Return,
+    Settings,
+    Exit,
+}
+
+impl MainMenuSelection {
+    pub fn increment(&mut self) {
+        *self = match self {
+            Self::Return => Self::Settings,
+            Self::Settings => Self::Exit,
+            Self::Exit => Self::Exit,
+        }
+    }
+
+    pub fn decrement(&mut self) {
+        *self = match self {
+            Self::Return => Self::Return,
+            Self::Settings => Self::Return,
+            Self::Exit => Self::Settings,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct BodyCursor {
     pub position: usize,

@@ -67,6 +67,10 @@ impl Application {
             // has to be after all others since it's a "z-index: 1;" element
             self.render_method_dropdown(frame, layout.method_dropdown);
         }
+
+        if self.show_main_menu {
+            self.render_main_menu_pane(frame);
+        }
     }
 
     pub fn response_status_pane_height(&self) -> u16 {

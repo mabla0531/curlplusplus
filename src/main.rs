@@ -25,8 +25,8 @@ use crate::{
     client::ResponseType,
     settings::Settings,
     state::{
-        BodyCursor, HeaderSection, MainState, Method, MethodState, Panel, RequestHeaderFocus,
-        UrlState,
+        BodyCursor, HeaderSection, MainMenuSelection, MainMenuState, MainState, Method,
+        MethodState, Panel, RequestHeaderFocus, UrlState,
     },
     ui::animations::AnimationState,
 };
@@ -37,7 +37,10 @@ pub struct Application {
     pub method_state: MethodState,
     pub url_state: UrlState,
     pub main_state: MainState,
+    pub main_menu_state: MainMenuState,
+
     pub editing: bool,
+    pub show_main_menu: bool,
     pub exit_request: bool,
 
     pub client: Client,
@@ -76,7 +79,12 @@ impl Application {
                 },
                 response_status_scroll: 0,
             },
+            main_menu_state: MainMenuState {
+                selection: MainMenuSelection::Return,
+            },
+
             editing: false,
+            show_main_menu: false,
             exit_request: false,
 
             client: Client::new(),

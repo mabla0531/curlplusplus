@@ -10,32 +10,33 @@ use ratatui::{
 
 impl Application {
     pub fn render_help_bar(&self, frame: &mut Frame, area: Rect) {
-        let keys = match self.settings.symbols {
-            true => ["󰌒", "󰘶", "󰌒", "󰌑", "󱊷", "ctrl", "󰌑"],
-            false => ["tab", "shift", "tab", "enter", "esc", "ctrl", "enter"],
-        };
+        let (tab_key, shift_key, enter_key, escape_key, control_key, space_key) =
+            match self.settings.symbols {
+                true => ("󰌒", "󰘶", "󰌑", "󱊷", "󰘴", "󱁐"),
+                false => ("tab", "shift", "enter", "esc", "ctrl", "space"),
+            };
 
         let help_spans = [
-            self.badge(keys[0], None, self.settings.theme.inactive_element),
+            self.badge(tab_key, None, self.settings.theme.inactive_element),
             vec![Span::styled("/", Style::new().fg(self.settings.theme.text))],
-            self.badge(keys[1], None, self.settings.theme.inactive_element),
-            self.badge(keys[2], None, self.settings.theme.inactive_element),
+            self.badge(shift_key, None, self.settings.theme.inactive_element),
+            self.badge(tab_key, None, self.settings.theme.inactive_element),
             vec![Span::styled(
                 "switch pane  ",
                 Style::new().fg(self.settings.theme.text),
             )],
-            self.badge(keys[3], None, self.settings.theme.inactive_element),
+            self.badge(enter_key, None, self.settings.theme.inactive_element),
             vec![Span::styled(
                 "edit/confirm  ",
                 Style::new().fg(self.settings.theme.text),
             )],
-            self.badge(keys[4], None, self.settings.theme.inactive_element),
+            self.badge(escape_key, None, self.settings.theme.inactive_element),
             vec![Span::styled(
-                "exit  ",
+                "show menu  ",
                 Style::new().fg(self.settings.theme.text),
             )],
-            self.badge(keys[5], None, self.settings.theme.inactive_element),
-            self.badge(keys[6], None, self.settings.theme.inactive_element),
+            self.badge(control_key, None, self.settings.theme.inactive_element),
+            self.badge(space_key, None, self.settings.theme.inactive_element),
             vec![Span::styled(
                 "send  ",
                 Style::new().fg(self.settings.theme.text),
