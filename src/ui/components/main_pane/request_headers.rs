@@ -137,16 +137,17 @@ impl Application {
             String::new()
         };
 
-        // magic number guide: 2 is name field badge side characters, 1 is colon separator
+        // magic number guide: 2 is name field input side characters, 1 is colon separator
         let value_field_width =
             (area.width as usize).saturating_sub(2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
 
+        // I believe there is some kind of multi-char ascii issue here when calculating name_suggestion compensation, subtracting 3 from the suggestion length is the only thing that keeps it from changing width when no suggestion
         let name_padding_len = HEADER_NAME_FIELD_WIDTH
             .saturating_sub(name_suggestion.len().saturating_sub(3))
             .saturating_sub(name.len());
         let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
         let value_padding_len = value_field_width
-            .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why! probably invisible ascii char!))
+            .saturating_sub(value.len() + 6) // 6 == trashcan button (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why! probably invisible ascii char!))
             .min(value_field_width);
 
         let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
@@ -185,7 +186,7 @@ impl Application {
             value_input_bg,
         );
 
-        let delete_badge = self.badge(
+        let delete_button = self.badge(
             "",
             Some(self.settings.theme.red),
             if focused && section == HeaderSection::Delete {
@@ -197,7 +198,7 @@ impl Application {
 
         [
             Line::from_iter(
-                [name_input, separator, value_input, delete_badge]
+                [name_input, separator, value_input, delete_button]
                     .into_iter()
                     .flatten()
                     .collect::<Vec<_>>(),

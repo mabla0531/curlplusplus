@@ -24,29 +24,29 @@ impl Application {
         ])
         .areas(vertical);
 
-        let return_badge_bg = if self.main_menu_state.selection == MainMenuSelection::Return {
+        let return_button_bg = if self.main_menu_state.selection == MainMenuSelection::Return {
             self.settings.theme.active_element
         } else {
             self.settings.theme.inactive_element
         };
-        let settings_badge_bg = if self.main_menu_state.selection == MainMenuSelection::Settings {
+        let settings_button_bg = if self.main_menu_state.selection == MainMenuSelection::Settings {
             self.settings.theme.active_element
         } else {
             self.settings.theme.inactive_element
         };
-        let exit_badge_bg = if self.main_menu_state.selection == MainMenuSelection::Exit {
+        let exit_button_bg = if self.main_menu_state.selection == MainMenuSelection::Exit {
             self.settings.theme.active_element
         } else {
             self.settings.theme.inactive_element
         };
 
-        let return_badge = Line::from_iter(
+        let return_button = Line::from_iter(
             [
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
                 )],
-                self.badge("  Return  ", None, return_badge_bg),
+                self.badge("  Return  ", None, return_button_bg),
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
@@ -54,13 +54,13 @@ impl Application {
             ]
             .concat(),
         );
-        let settings_badge = Line::from_iter(
+        let settings_button = Line::from_iter(
             [
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
                 )],
-                self.badge(" Settings ", None, settings_badge_bg),
+                self.badge(" Settings ", None, settings_button_bg),
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
@@ -68,13 +68,13 @@ impl Application {
             ]
             .concat(),
         );
-        let exit_badge = Line::from_iter(
+        let exit_button = Line::from_iter(
             [
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
                 )],
-                self.badge("   Exit   ", None, exit_badge_bg),
+                self.badge("   Exit   ", None, exit_button_bg),
                 vec![Span::styled(
                     "█████",
                     Style::default().fg(self.settings.theme.base),
@@ -86,13 +86,13 @@ impl Application {
         let menu = Paragraph::new(Text::from_iter([
             Line::from("██████████████████████")
                 .style(Style::default().fg(self.settings.theme.base)),
-            return_badge,
+            return_button,
             Line::from("██████████████████████")
                 .style(Style::default().fg(self.settings.theme.base)),
-            settings_badge,
+            settings_button,
             Line::from("██████████████████████")
                 .style(Style::default().fg(self.settings.theme.base)),
-            exit_badge,
+            exit_button,
             Line::from("██████████████████████")
                 .style(Style::default().fg(self.settings.theme.base)),
             Line::from_iter([
