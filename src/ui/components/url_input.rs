@@ -1,13 +1,13 @@
 use ratatui::{
+    Frame,
     layout::Rect,
     prelude::Position,
     style::Style,
     text::{Line, Span},
     widgets::{Block, BorderType, Borders, Paragraph},
-    Frame,
 };
 
-use crate::{state::Panel, Application};
+use crate::{Application, defs::URL_AUTOCOMPLETES, state::Panel};
 
 impl Application {
     pub fn render_url_input(&self, frame: &mut Frame, area: Rect) {
@@ -16,16 +16,14 @@ impl Application {
             _ => Style::new().fg(self.settings.theme.text),
         };
 
-        let help_string = if self.focused_panel != Panel::Url {
-            String::new()
-        } else if self.url_state.url_input == "https" || self.url_state.url_input == "http" {
-            ":// 󰛂".to_string()
-        } else if "htt".starts_with(self.url_state.url_input.as_str())
-            || self.url_state.url_input.is_empty()
+        let autocomplete_candidate = URL_AUTOCOMPLETES
+            .iter()
+            .find_map(|(k, v)| self.url_state.url_input.eq(k).then_some(*v));
+
+        let help_string = if let Some(autocomplete_candidate) = autocomplete_candidate
+            && self.focused_panel == Panel::Url
         {
-            "http 󰛂".replace(self.url_state.url_input.as_str(), "")
-        } else if self.url_state.url_input.ends_with(".") {
-            "com 󰛂".to_string()
+            format!("{} 󰛂", autocomplete_candidate)
         } else {
             String::new()
         };

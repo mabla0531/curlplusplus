@@ -1,4 +1,5 @@
 use crate::Application;
+use crate::defs::HEADER_AUTOCOMPLETES;
 use crate::{HeaderSection, RequestHeaderFocus};
 
 use crossterm::event::{KeyCode, KeyEvent};
@@ -6,6 +7,19 @@ use crossterm::event::{KeyCode, KeyEvent};
 impl Application {
     pub fn handle_request_headers_input(&mut self, event: KeyEvent) {
         match event.code {
+            KeyCode::Tab => {
+                if let RequestHeaderFocus::Header(header_index) = self.main_state.current_header
+                    && self.main_state.current_header_section == HeaderSection::Name
+                    && let Some((name, _)) = self.main_state.headers.get_mut(header_index)
+                    && !name.is_empty()
+                    && let Some(name_suggestion) = HEADER_AUTOCOMPLETES
+                        .iter()
+                        .find(|header| header.starts_with(&*name) && !header.eq(&name))
+                {
+                    name.push_str(name_suggestion.trim_start_matches(&*name));
+                    self.main_state.current_header_cursor = name.len();
+                }
+            }
             KeyCode::Char(character) if self.editing => {
                 if let RequestHeaderFocus::Header(header) = self.main_state.current_header
                     && let Some(name) = self.main_state.headers.get_mut(header)

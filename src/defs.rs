@@ -1,0 +1,31 @@
+pub const URL_AUTOCOMPLETES: [(&str, &str); 10] = [
+    ("", "http"),
+    ("h", "ttp"),
+    ("ht", "tp"),
+    ("htt", "p"),
+    ("http", "://"),
+    ("https", "://"),
+    ("http:", "//"),
+    ("https:", "//"),
+    ("http:/", "/"),
+    ("https:/", "/"),
+];
+
+pub const HEADER_AUTOCOMPLETES: [&str; 16] = [
+    "host",
+    "user-agent",
+    "accept",
+    "accept-language",
+    "accept-encoding",
+    "referer",
+    "authorization",
+    "cookie",
+    "content-type",
+    "connection",
+    "cache-control",
+    "origin",
+    "content-length",
+    "if-none-match",
+    "if-modified-since",
+    "upgrade-insecure-requests",
+];

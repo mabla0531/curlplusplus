@@ -1,16 +1,17 @@
 use std::iter;
 
 use ratatui::{
+    Frame,
     layout::{Constraint, Layout, Position, Rect},
     style::Style,
     text::{Line, Span, Text},
     widgets::{Block, Padding, Paragraph},
-    Frame,
 };
 
 use crate::{
-    state::{HeaderSection, MainTab, Panel, RequestHeaderFocus},
     Application,
+    defs::HEADER_AUTOCOMPLETES,
+    state::{HeaderSection, MainTab, Panel, RequestHeaderFocus},
 };
 
 const HEADER_NAME_FIELD_WIDTH: usize = 28;
@@ -59,7 +60,7 @@ impl Application {
             .collect::<Vec<_>>();
 
         let header_paragraph = Paragraph::new(Text::from_iter(header_elements))
-            .block(Block::new().padding(Padding::new(1, 1, 1, 1)));
+            .block(Block::new().padding(Padding::uniform(1)));
 
         let (add_button_fg, add_button_bg) =
             match (&self.focused_panel, &self.main_state.current_header) {
@@ -126,40 +127,62 @@ impl Application {
         section: HeaderSection,
         area: Rect,
     ) -> [Line<'a>; 2] {
-        let padding = 1_usize;
+        let name_suggestion = if !name.is_empty() {
+            HEADER_AUTOCOMPLETES
+                .iter()
+                .find(|&header| header.starts_with(&name) && !header.eq(&name))
+                .map(|header| format!("{} 󰛂", header.replace(&name, "")))
+                .unwrap_or(String::new())
+        } else {
+            String::new()
+        };
 
         // magic number guide: 2 is name field badge side characters, 1 is colon separator
         let value_field_width =
-            (area.width as usize).saturating_sub(padding * 2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
+            (area.width as usize).saturating_sub(2 + HEADER_NAME_FIELD_WIDTH + 2 + 1);
 
-        let name_padding_len = HEADER_NAME_FIELD_WIDTH.saturating_sub(name.len());
+        let name_padding_len = HEADER_NAME_FIELD_WIDTH
+            .saturating_sub(name_suggestion.len().saturating_sub(3))
+            .saturating_sub(name.len());
         let name_padding = iter::repeat_n(' ', name_padding_len).collect::<String>();
         let value_padding_len = value_field_width
-            .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why!))
+            .saturating_sub(value.len() + 6) // 6 == trashcan badge (when this is 5 (the theoretical width of a padded UTF-16 character) it doesn't render the delete badge (no idea why! probably invisible ascii char!))
             .min(value_field_width);
 
         let value_padding = iter::repeat_n(' ', value_padding_len).collect::<String>();
 
-        let name_badge = self.badge(
-            format!("{}{}", name, name_padding),
-            Some(self.settings.theme.text),
-            if focused && section == HeaderSection::Name {
-                self.settings.theme.active_element
-            } else {
-                self.settings.theme.inactive_element
-            },
+        let name_input_bg = if focused && section == HeaderSection::Name {
+            self.settings.theme.active_element
+        } else {
+            self.settings.theme.inactive_element
+        };
+
+        let name_input = self.input(
+            vec![
+                Span::styled(name, Style::default()),
+                Span::styled(
+                    name_suggestion,
+                    Style::default().fg(self.settings.theme.inactive_text),
+                ),
+                Span::styled(name_padding, Style::default().fg(name_input_bg)),
+            ],
+            name_input_bg,
         );
 
         let separator = vec![Span::styled(":", Style::new().fg(self.settings.theme.text))];
 
-        let value_badge = self.badge(
-            format!("{}{}", value, value_padding),
-            Some(self.settings.theme.text),
-            if focused && section == HeaderSection::Value {
-                self.settings.theme.active_element
-            } else {
-                self.settings.theme.inactive_element
-            },
+        let value_input_bg = if focused && section == HeaderSection::Value {
+            self.settings.theme.active_element
+        } else {
+            self.settings.theme.inactive_element
+        };
+
+        let value_input = self.input(
+            vec![
+                Span::styled(value, Style::default()),
+                Span::styled(value_padding, Style::default().fg(value_input_bg)),
+            ],
+            value_input_bg,
         );
 
         let delete_badge = self.badge(
@@ -174,7 +197,7 @@ impl Application {
 
         [
             Line::from_iter(
-                [name_badge, separator, value_badge, delete_badge]
+                [name_input, separator, value_input, delete_badge]
                     .into_iter()
                     .flatten()
                     .collect::<Vec<_>>(),

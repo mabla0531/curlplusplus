@@ -143,7 +143,7 @@ fn load_themes() -> Vec<(String, Theme)> {
     [builtin_themes, custom_themes].concat()
 }
 
-pub const DEFAULT_THEME: &str = "dracula";
+pub const DEFAULT_THEME: &str = "catppuccin_macchiato";
 
 pub const CATPPUCCIN_MACCHIATO: Theme = Theme {
     accent: Color::Rgb(245, 169, 127),

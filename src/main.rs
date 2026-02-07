@@ -1,5 +1,6 @@
 mod cli;
 mod client;
+mod defs;
 mod errors;
 mod keyboard;
 mod settings;
